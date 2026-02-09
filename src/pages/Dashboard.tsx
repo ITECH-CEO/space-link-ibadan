@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClientsTab } from "@/components/dashboard/ClientsTab";
@@ -10,6 +8,7 @@ import { MatchesTab } from "@/components/dashboard/MatchesTab";
 import { CommissionsTab } from "@/components/dashboard/CommissionsTab";
 import { AdminsTab } from "@/components/dashboard/AdminsTab";
 import { Users, Building2, Handshake, DollarSign, ShieldCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
   const { user, userRole, loading } = useAuth();
@@ -21,13 +20,26 @@ export default function Dashboard() {
   const isManager = userRole === "manager";
   const isVerifier = userRole === "verifier";
 
+  const roleLabel = userRole.replace("_", " ");
+
+  const roleColors: Record<string, string> = {
+    super_admin: "bg-primary/10 text-primary border-primary/20",
+    manager: "bg-accent/10 text-accent-foreground border-accent/20",
+    verifier: "bg-muted text-muted-foreground border-border",
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container py-8">
-        <div className="mb-6">
-          <h1 className="font-display text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground capitalize">Role: {userRole?.replace("_", " ")}</p>
+        <div className="mb-6 flex items-center gap-3">
+          <div>
+            <h1 className="font-display text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">Manage SpaceLink operations</p>
+          </div>
+          <Badge variant="outline" className={`capitalize ml-auto ${roleColors[userRole] || ""}`}>
+            {roleLabel}
+          </Badge>
         </div>
         <Tabs defaultValue="clients">
           <TabsList className="mb-6 flex-wrap">
