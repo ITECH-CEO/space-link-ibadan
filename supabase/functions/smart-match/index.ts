@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface Client {
@@ -44,16 +44,14 @@ function computeScore(client: Client, property: Property, roomType?: RoomType): 
   // Budget fit (0-40 points)
   if (price > 0 && budgetMax < Infinity) {
     if (price >= budgetMin && price <= budgetMax) {
-      // Perfect fit — closer to midpoint = higher score
       const mid = (budgetMin + budgetMax) / 2;
       const dist = Math.abs(price - mid) / (budgetMax - budgetMin || 1);
       score += Math.round(40 * (1 - dist));
     } else if (price < budgetMin) {
       score += Math.max(0, 20 - Math.round(((budgetMin - price) / budgetMin) * 20));
     }
-    // Over budget = 0
   } else {
-    score += 20; // neutral when no budget info
+    score += 20;
   }
 
   // Preference/tag overlap (0-40 points)
@@ -67,7 +65,7 @@ function computeScore(client: Client, property: Property, roomType?: RoomType): 
     const matches = propertyTags.filter((t) => clientSet.has(t.toLowerCase())).length;
     score += Math.round((matches / clientTags.length) * 40);
   } else {
-    score += 15; // neutral
+    score += 15;
   }
 
   // Verification bonus (0-20 points)
@@ -79,7 +77,7 @@ function computeScore(client: Client, property: Property, roomType?: RoomType): 
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -87,7 +85,6 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Get auth header to validate admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -105,7 +102,6 @@ serve(async (req) => {
       });
     }
 
-    // Check admin
     const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: user.id });
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
@@ -115,9 +111,8 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const clientId = body.client_id; // optional: match specific client only
+    const clientId = body.client_id;
 
-    // Fetch approved clients (or specific one)
     let clientQuery = supabase
       .from("clients")
       .select("id, full_name, budget_min, budget_max, preferences, verification_status, phone")
@@ -132,7 +127,6 @@ serve(async (req) => {
 
     const { data: clients } = await clientQuery;
 
-    // Fetch approved properties with room types
     const { data: properties } = await supabase
       .from("properties")
       .select("id, property_name, property_type, verification_status, available_rooms, facilities")
@@ -151,7 +145,6 @@ serve(async (req) => {
       );
     }
 
-    // Map room types to properties
     const propMap = new Map<string, Property>();
     for (const p of properties) {
       propMap.set(p.id, { ...p, room_types: [] });
@@ -161,7 +154,6 @@ serve(async (req) => {
       if (prop) prop.room_types!.push(rt);
     }
 
-    // Get existing matches to avoid duplicates
     const { data: existingMatches } = await supabase
       .from("matches")
       .select("client_id, property_id, room_type_id");
@@ -170,7 +162,6 @@ serve(async (req) => {
       (existingMatches || []).map((m) => `${m.client_id}-${m.property_id}-${m.room_type_id || "none"}`)
     );
 
-    // Generate matches
     const newMatches: Array<{
       client_id: string;
       property_id: string;
@@ -213,9 +204,8 @@ serve(async (req) => {
       }
     }
 
-    // Sort by score descending and insert top matches
     newMatches.sort((a, b) => b.compatibility_score - a.compatibility_score);
-    const topMatches = newMatches.slice(0, 50); // limit batch
+    const topMatches = newMatches.slice(0, 50);
 
     if (topMatches.length > 0) {
       const { error } = await supabase.from("matches").insert(topMatches);

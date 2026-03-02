@@ -1,9 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, Users, Shield, Handshake, ArrowRight, MapPin, Star } from "lucide-react";
+import { Building2, Users, Shield, Handshake, ArrowRight, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import spacelinkLogo from "@/assets/spacelink-logo.jpg";
 
 const features = [
@@ -13,14 +15,28 @@ const features = [
   { icon: Shield, title: "Verified & Secure", desc: "Multi-level verification for students and properties. Admin dashboard for oversight." },
 ];
 
-const stats = [
-  { value: "500+", label: "Properties Listed" },
-  { value: "2,000+", label: "Students Matched" },
-  { value: "98%", label: "Satisfaction Rate" },
-  { value: "24/7", label: "Support Available" },
-];
-
 export default function Index() {
+  const [stats, setStats] = useState({ properties: 0, clients: 0, matches: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const [{ count: pCount }, { count: cCount }, { count: mCount }] = await Promise.all([
+        supabase.from("properties").select("*", { count: "exact", head: true }).eq("verification_status", "approved"),
+        supabase.from("clients").select("*", { count: "exact", head: true }),
+        supabase.from("matches").select("*", { count: "exact", head: true }).eq("status", "accepted"),
+      ]);
+      setStats({ properties: pCount ?? 0, clients: cCount ?? 0, matches: mCount ?? 0 });
+    };
+    fetchStats();
+  }, []);
+
+  const displayStats = [
+    { value: stats.properties > 0 ? `${stats.properties}+` : "—", label: "Verified Properties" },
+    { value: stats.clients > 0 ? `${stats.clients}+` : "—", label: "Registered Students" },
+    { value: stats.matches > 0 ? `${stats.matches}+` : "—", label: "Successful Matches" },
+    { value: "24/7", label: "Support Available" },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -62,7 +78,7 @@ export default function Index() {
       <section className="border-b bg-card py-12">
         <div className="container">
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-            {stats.map((s, i) => (
+            {displayStats.map((s, i) => (
               <motion.div
                 key={s.label}
                 initial={{ opacity: 0, y: 20 }}
@@ -114,7 +130,7 @@ export default function Index() {
       <section className="gradient-primary py-16">
         <div className="container text-center">
           <h2 className="mb-4 font-display text-3xl font-bold text-primary-foreground">Ready to Find Your Space?</h2>
-          <p className="mb-8 text-primary-foreground/80">Join thousands of students who found their perfect accommodation through SpaceLink.</p>
+          <p className="mb-8 text-primary-foreground/80">Join students who found their perfect accommodation through SpaceLink.</p>
           <Link to="/auth?mode=signup">
             <Button size="lg" className="gradient-accent text-accent-foreground font-semibold px-8">
               Sign Up Now <ArrowRight className="ml-2 h-5 w-5" />
