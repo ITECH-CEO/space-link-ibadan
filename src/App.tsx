@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Properties from "./pages/Properties";
+import PropertyDetail from "./pages/PropertyDetail";
+import MyMatches from "./pages/MyMatches";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +27,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/properties" element={<Properties />} />
+            <Route path="/property/:id" element={<PropertyDetail />} />
+            <Route path="/my-matches" element={<MyMatches />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

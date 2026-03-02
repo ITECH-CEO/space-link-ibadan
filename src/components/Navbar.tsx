@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Building2, User } from "lucide-react";
+import { LogOut, LayoutDashboard, Building2, User, Handshake } from "lucide-react";
 import spacelinkLogo from "@/assets/spacelink-logo.jpg";
 
 export function Navbar() {
@@ -15,13 +15,17 @@ export function Navbar() {
           <img src={spacelinkLogo} alt="SpaceLink" className="h-10 w-10 rounded-lg object-cover" />
           <span className="font-display text-xl font-bold text-foreground">SpaceLink</span>
         </Link>
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1">
           <Button variant="ghost" size="sm" onClick={() => navigate("/properties")}>
             <Building2 className="mr-1.5 h-4 w-4" />
             <span className="hidden sm:inline">Properties</span>
           </Button>
           {user ? (
             <>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/my-matches")}>
+                <Handshake className="mr-1.5 h-4 w-4" />
+                <span className="hidden sm:inline">My Matches</span>
+              </Button>
               {userRole && (
                 <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
                   <LayoutDashboard className="mr-1.5 h-4 w-4" />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -86,7 +87,8 @@ export default function Properties() {
             {filtered.map((p) => {
               const minPrice = getMinPrice(p);
               return (
-                <Card key={p.id} className="overflow-hidden transition-shadow hover:shadow-lg">
+                <Link key={p.id} to={`/property/${p.id}`}>
+                <Card className="overflow-hidden transition-shadow hover:shadow-lg cursor-pointer">
                   <div className="gradient-primary p-4">
                     <div className="flex items-center justify-between">
                       <Badge variant="outline" className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 capitalize">
@@ -137,6 +139,7 @@ export default function Properties() {
                     <p className="mt-2 text-xs text-muted-foreground">by {p.landlord_name}</p>
                   </CardContent>
                 </Card>
+                </Link>
               );
             })}
           </div>
