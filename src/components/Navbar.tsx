@@ -1,12 +1,15 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Building2, User, Handshake } from "lucide-react";
+import { LogOut, LayoutDashboard, Building2, User, Handshake, Home } from "lucide-react";
 import spacelinkLogo from "@/assets/spacelink-logo.jpg";
 
 export function Navbar() {
   const { user, userRole, signOut } = useAuth();
   const navigate = useNavigate();
+
+  const isAdmin = userRole === "super_admin" || userRole === "manager" || userRole === "verifier";
+  const isLandlord = userRole === "landlord";
 
   return (
     <header className="sticky top-0 z-50 glass border-b">
@@ -22,11 +25,19 @@ export function Navbar() {
           </Button>
           {user ? (
             <>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/my-matches")}>
-                <Handshake className="mr-1.5 h-4 w-4" />
-                <span className="hidden sm:inline">My Matches</span>
-              </Button>
-              {userRole && (
+              {!isAdmin && !isLandlord && (
+                <Button variant="ghost" size="sm" onClick={() => navigate("/my-matches")}>
+                  <Handshake className="mr-1.5 h-4 w-4" />
+                  <span className="hidden sm:inline">My Matches</span>
+                </Button>
+              )}
+              {isLandlord && (
+                <Button variant="ghost" size="sm" onClick={() => navigate("/landlord")}>
+                  <Home className="mr-1.5 h-4 w-4" />
+                  <span className="hidden sm:inline">My Properties</span>
+                </Button>
+              )}
+              {isAdmin && (
                 <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
                   <LayoutDashboard className="mr-1.5 h-4 w-4" />
                   <span className="hidden sm:inline">Dashboard</span>
