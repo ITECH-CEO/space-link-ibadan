@@ -81,6 +81,7 @@ export function AdminsTab() {
     super_admin: "bg-primary/10 text-primary border-primary/20",
     manager: "bg-accent/10 text-accent-foreground border-accent/20",
     verifier: "bg-muted text-muted-foreground border-border",
+    landlord: "bg-success/10 text-success border-success/20",
   };
 
   // Filter out users who already have roles
@@ -124,6 +125,7 @@ export function AdminsTab() {
                   <SelectContent>
                     <SelectItem value="manager">Manager</SelectItem>
                     <SelectItem value="verifier">Verifier</SelectItem>
+                    <SelectItem value="landlord">Landlord</SelectItem>
                     <SelectItem value="super_admin">Super Admin</SelectItem>
                   </SelectContent>
                 </Select>
