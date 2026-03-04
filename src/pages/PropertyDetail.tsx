@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,8 +17,13 @@ interface PropertyWithRooms extends Tables<"properties"> {
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
+  const { userRole } = useAuth();
   const [property, setProperty] = useState<PropertyWithRooms | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const isAdmin = userRole === "super_admin" || userRole === "manager" || userRole === "verifier";
+  const isLandlord = userRole === "landlord";
+  const showLandlordContact = isAdmin || isLandlord;
 
   useEffect(() => {
     if (!id) return;
@@ -149,23 +155,39 @@ export default function PropertyDetail() {
             </CardContent>
           </Card>
 
-          {/* Landlord */}
-          <Card>
-            <CardHeader><CardTitle>Landlord Contact</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <div className="font-semibold text-lg">{property.landlord_name}</div>
-              {property.landlord_phone && (
-                <a href={`tel:${property.landlord_phone}`} className="flex items-center gap-2 text-sm text-primary hover:underline">
-                  <Phone className="h-4 w-4" /> {property.landlord_phone}
-                </a>
-              )}
-              {property.landlord_email && (
-                <a href={`mailto:${property.landlord_email}`} className="flex items-center gap-2 text-sm text-primary hover:underline">
-                  <Mail className="h-4 w-4" /> {property.landlord_email}
-                </a>
-              )}
-            </CardContent>
-          </Card>
+          {/* Landlord Contact - only for admins/landlords */}
+          {showLandlordContact ? (
+            <Card>
+              <CardHeader><CardTitle>Landlord Contact</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <div className="font-semibold text-lg">{property.landlord_name}</div>
+                {property.landlord_phone && (
+                  <a href={`tel:${property.landlord_phone}`} className="flex items-center gap-2 text-sm text-primary hover:underline">
+                    <Phone className="h-4 w-4" /> {property.landlord_phone}
+                  </a>
+                )}
+                {property.landlord_email && (
+                  <a href={`mailto:${property.landlord_email}`} className="flex items-center gap-2 text-sm text-primary hover:underline">
+                    <Mail className="h-4 w-4" /> {property.landlord_email}
+                  </a>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader><CardTitle>Interested?</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Contact SpaceLink to arrange a viewing or get matched with this property. All bookings go through our platform to ensure your safety and satisfaction.
+                </p>
+                <Link to="/profile">
+                  <Button className="w-full gradient-primary text-primary-foreground">
+                    Complete Profile to Get Matched
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Room Types */}

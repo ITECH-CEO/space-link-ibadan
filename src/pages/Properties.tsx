@@ -136,7 +136,7 @@ export default function Properties() {
                         </div>
                       </div>
                     )}
-                    <p className="mt-2 text-xs text-muted-foreground">by {p.landlord_name}</p>
+                    
                   </CardContent>
                 </Card>
                 </Link>
