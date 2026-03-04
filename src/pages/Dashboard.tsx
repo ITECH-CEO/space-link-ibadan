@@ -5,9 +5,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClientsTab } from "@/components/dashboard/ClientsTab";
 import { PropertiesTab } from "@/components/dashboard/PropertiesTab";
 import { MatchesTab } from "@/components/dashboard/MatchesTab";
+import { RoommateMatchesTab } from "@/components/dashboard/RoommateMatchesTab";
 import { CommissionsTab } from "@/components/dashboard/CommissionsTab";
 import { AdminsTab } from "@/components/dashboard/AdminsTab";
-import { Users, Building2, Handshake, DollarSign, ShieldCheck } from "lucide-react";
+import { Users, Building2, Handshake, DollarSign, ShieldCheck, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
@@ -49,6 +50,9 @@ export default function Dashboard() {
               <TabsTrigger value="matches"><Handshake className="mr-2 h-4 w-4" />Matches</TabsTrigger>
             )}
             {(isSuperAdmin || isManager) && (
+              <TabsTrigger value="roommates"><UserPlus className="mr-2 h-4 w-4" />Roommates</TabsTrigger>
+            )}
+            {(isSuperAdmin || isManager) && (
               <TabsTrigger value="commissions"><DollarSign className="mr-2 h-4 w-4" />Commissions</TabsTrigger>
             )}
             {isSuperAdmin && (
@@ -58,6 +62,7 @@ export default function Dashboard() {
           <TabsContent value="clients"><ClientsTab /></TabsContent>
           <TabsContent value="properties"><PropertiesTab /></TabsContent>
           {(isSuperAdmin || isManager) && <TabsContent value="matches"><MatchesTab /></TabsContent>}
+          {(isSuperAdmin || isManager) && <TabsContent value="roommates"><RoommateMatchesTab /></TabsContent>}
           {(isSuperAdmin || isManager) && <TabsContent value="commissions"><CommissionsTab /></TabsContent>}
           {isSuperAdmin && <TabsContent value="admins"><AdminsTab /></TabsContent>}
         </Tabs>

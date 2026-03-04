@@ -405,6 +405,74 @@ export type Database = {
           },
         ]
       }
+      roommate_matches: {
+        Row: {
+          ai_reasoning: string | null
+          client_a_id: string
+          client_b_id: string
+          compatibility_score: number | null
+          created_at: string
+          id: string
+          property_id: string | null
+          room_type_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_reasoning?: string | null
+          client_a_id: string
+          client_b_id: string
+          compatibility_score?: number | null
+          created_at?: string
+          id?: string
+          property_id?: string | null
+          room_type_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_reasoning?: string | null
+          client_a_id?: string
+          client_b_id?: string
+          compatibility_score?: number | null
+          created_at?: string
+          id?: string
+          property_id?: string | null
+          room_type_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roommate_matches_client_a_id_fkey"
+            columns: ["client_a_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roommate_matches_client_b_id_fkey"
+            columns: ["client_b_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roommate_matches_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roommate_matches_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
