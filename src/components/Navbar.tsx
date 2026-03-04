@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { LogOut, LayoutDashboard, Building2, User, Handshake, Home } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
 import spacelinkLogo from "@/assets/spacelink-logo.jpg";
 
 export function Navbar() {
@@ -43,6 +44,7 @@ export function Navbar() {
                   <span className="hidden sm:inline">Dashboard</span>
                 </Button>
               )}
+              <NotificationBell />
               <Button variant="ghost" size="sm" onClick={() => navigate("/profile")}>
                 <User className="mr-1.5 h-4 w-4" />
                 <span className="hidden sm:inline">Profile</span>
