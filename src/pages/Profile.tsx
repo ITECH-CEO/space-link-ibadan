@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VerificationBadge } from "@/components/VerificationBadge";
-import { Textarea } from "@/components/ui/textarea";
+import { FileUpload } from "@/components/FileUpload";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import { Shield, FileText, Camera, CreditCard } from "lucide-react";
 
 export default function Profile() {
   const { user, loading: authLoading } = useAuth();
@@ -26,6 +27,9 @@ export default function Profile() {
     budget_min: "",
     budget_max: "",
     preferences: [] as string[],
+    government_id_url: "",
+    proof_of_admission_url: "",
+    current_photo_url: "",
   });
 
   const preferenceOptions = [
@@ -53,6 +57,9 @@ export default function Profile() {
             budget_min: data.budget_min?.toString() || "",
             budget_max: data.budget_max?.toString() || "",
             preferences: data.preferences || [],
+            government_id_url: data.government_id_url || "",
+            proof_of_admission_url: data.proof_of_admission_url || "",
+            current_photo_url: data.current_photo_url || "",
           });
         }
       });
@@ -73,6 +80,9 @@ export default function Profile() {
       budget_min: form.budget_min ? Number(form.budget_min) : null,
       budget_max: form.budget_max ? Number(form.budget_max) : null,
       preferences: form.preferences,
+      government_id_url: form.government_id_url || null,
+      proof_of_admission_url: form.proof_of_admission_url || null,
+      current_photo_url: form.current_photo_url || null,
       user_id: user.id,
       email: user.email,
     };
@@ -98,6 +108,21 @@ export default function Profile() {
     }));
   };
 
+  // Verification completeness
+  const verificationSteps = [
+    { label: "Full Name", done: !!form.full_name },
+    { label: "Phone Number", done: !!form.phone },
+    { label: "NIN / Gov ID Number", done: !!form.nin },
+    { label: "Government ID Upload", done: !!form.government_id_url },
+    { label: "Proof of Admission", done: !!form.proof_of_admission_url },
+    { label: "Current Photo", done: !!form.current_photo_url },
+    { label: "Guarantor Name", done: !!form.guarantor_name },
+    { label: "Guarantor Phone", done: !!form.guarantor_phone },
+    { label: "Budget Range", done: !!form.budget_min && !!form.budget_max },
+  ];
+  const completedSteps = verificationSteps.filter((s) => s.done).length;
+  const progressPercent = Math.round((completedSteps / verificationSteps.length) * 100);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -106,6 +131,31 @@ export default function Profile() {
           <h1 className="font-display text-3xl font-bold">My Profile</h1>
           {client && <VerificationBadge status={client.verification_status} />}
         </div>
+
+        {/* Verification Progress */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3 mb-3">
+              <Shield className="h-5 w-5 text-primary" />
+              <h3 className="font-display font-semibold">Verification Progress</h3>
+              <span className="ml-auto text-sm font-medium text-primary">{progressPercent}%</span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full gradient-primary transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-1">
+              {verificationSteps.map((s) => (
+                <div key={s.label} className={`text-xs flex items-center gap-1 ${s.done ? "text-success" : "text-muted-foreground"}`}>
+                  <span>{s.done ? "✓" : "○"}</span> {s.label}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Personal Information</CardTitle>
@@ -121,9 +171,38 @@ export default function Profile() {
                 <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} maxLength={20} />
               </div>
               <div className="space-y-2">
-                <Label>NIN / Government ID</Label>
+                <Label>NIN / Government ID Number</Label>
                 <Input value={form.nin} onChange={(e) => setForm({ ...form, nin: e.target.value })} maxLength={20} />
               </div>
+            </div>
+
+            {/* Verification Documents */}
+            <h3 className="pt-4 font-display font-semibold flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" /> Verification Documents
+            </h3>
+            <p className="text-xs text-muted-foreground">Upload clear photos of your documents. Max 5MB each.</p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FileUpload
+                bucket="property-media"
+                folder="client-docs"
+                label="Government ID"
+                currentUrl={form.government_id_url || null}
+                onUploaded={(url) => setForm({ ...form, government_id_url: url })}
+              />
+              <FileUpload
+                bucket="property-media"
+                folder="client-docs"
+                label="Proof of Admission"
+                currentUrl={form.proof_of_admission_url || null}
+                onUploaded={(url) => setForm({ ...form, proof_of_admission_url: url })}
+              />
+              <FileUpload
+                bucket="property-media"
+                folder="client-photos"
+                label="Current Photo"
+                currentUrl={form.current_photo_url || null}
+                onUploaded={(url) => setForm({ ...form, current_photo_url: url })}
+              />
             </div>
 
             <h3 className="pt-4 font-display font-semibold">Guarantor Details</h3>
