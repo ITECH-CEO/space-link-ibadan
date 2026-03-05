@@ -6,7 +6,7 @@ import { Building2, Users, Shield, Handshake, ArrowRight, MapPin } from "lucide-
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import spacelinkLogo from "@/assets/spacelink-logo.jpg";
+import unispaceLogo from "@/assets/unispace-logo.jpg";
 
 const features = [
   { icon: Users, title: "Student Registration", desc: "Quick onboarding with ID verification, guarantor info, and preference tags." },
@@ -51,12 +51,12 @@ export default function Index() {
             transition={{ duration: 0.6 }}
             className="mx-auto max-w-3xl text-center"
           >
-            <img src={spacelinkLogo} alt="SpaceLink" className="mx-auto mb-6 h-20 w-20 rounded-2xl object-cover shadow-xl" />
+            <img src={unispaceLogo} alt="UNISPACE.NG" className="mx-auto mb-6 h-20 w-20 rounded-2xl object-cover shadow-xl" />
             <h1 className="mb-4 font-display text-4xl font-bold leading-tight text-primary-foreground md:text-6xl">
-              Find Your Perfect <span className="text-accent">Space</span> in Ibadan
+              Find Your Perfect <span className="text-accent">Space</span> in Nigeria
             </h1>
             <p className="mb-8 text-lg text-primary-foreground/80 md:text-xl">
-              Connecting students, corpers, and young professionals with verified hostels and apartments. No wahala, just results.
+              Verified. Secure. Reliable. Connect with verified hostels, apartments, and roommates nationwide.
             </p>
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link to="/auth?mode=signup">
@@ -98,8 +98,8 @@ export default function Index() {
       {/* Features */}
       <section className="py-20">
         <div className="container">
-          <div className="mx-auto mb-12 max-w-2xl text-center">
-            <h2 className="mb-4 font-display text-3xl font-bold">How SpaceLink Works</h2>
+         <div className="mx-auto mb-12 max-w-2xl text-center">
+            <h2 className="mb-4 font-display text-3xl font-bold">How UNISPACE Works</h2>
             <p className="text-muted-foreground">From registration to moving in — we handle everything.</p>
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -127,10 +127,10 @@ export default function Index() {
       </section>
 
       {/* CTA */}
-      <section className="gradient-primary py-16">
+       <section className="gradient-primary py-16">
         <div className="container text-center">
           <h2 className="mb-4 font-display text-3xl font-bold text-primary-foreground">Ready to Find Your Space?</h2>
-          <p className="mb-8 text-primary-foreground/80">Join students who found their perfect accommodation through SpaceLink.</p>
+          <p className="mb-8 text-primary-foreground/80">Join thousands who found their perfect accommodation through UNISPACE.NG.</p>
           <Link to="/auth?mode=signup">
             <Button size="lg" className="gradient-accent text-accent-foreground font-semibold px-8">
               Sign Up Now <ArrowRight className="ml-2 h-5 w-5" />
@@ -140,17 +140,17 @@ export default function Index() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t bg-card py-8">
+       <footer className="border-t bg-card py-8">
         <div className="container flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2">
-            <img src={spacelinkLogo} alt="SpaceLink" className="h-8 w-8 rounded-lg object-cover" />
-            <span className="font-display font-bold">SpaceLink</span>
+            <img src={unispaceLogo} alt="UNISPACE.NG" className="h-8 w-8 rounded-lg object-cover" />
+            <span className="font-display font-bold">UNISPACE.NG</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} SpaceLink — Connecting Future Accommodation
+            © {new Date().getFullYear()} UNISPACE.NG — Verified. Secure. Reliable.
           </p>
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" /> Ibadan, Nigeria
+            <MapPin className="h-4 w-4" /> Nigeria
           </div>
         </div>
       </footer>
