@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSearchParams, Navigate } from "react-router-dom";
+import { useSearchParams, Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,7 +91,14 @@ export default function Auth() {
               {loading ? "Loading..." : mode === "signin" ? "Sign In" : "Sign Up"}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm text-muted-foreground">
+          <div className="mt-4 text-center text-sm text-muted-foreground space-y-2">
+            {mode === "signin" && (
+              <div>
+                <Link to="/forgot-password" className="text-primary underline text-xs">
+                  Forgot your password?
+                </Link>
+              </div>
+            )}
             {mode === "signin" ? (
               <>
                 Don't have an account?{" "}
