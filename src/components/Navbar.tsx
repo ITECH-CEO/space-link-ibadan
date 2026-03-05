@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { LogOut, LayoutDashboard, Building2, User, Handshake, Home } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
-import spacelinkLogo from "@/assets/spacelink-logo.jpg";
+import unispaceLogo from "@/assets/unispace-logo.jpg";
 
 export function Navbar() {
   const { user, userRole, signOut } = useAuth();
@@ -15,9 +15,9 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 glass border-b">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <img src={spacelinkLogo} alt="SpaceLink" className="h-10 w-10 rounded-lg object-cover" />
-          <span className="font-display text-xl font-bold text-foreground">SpaceLink</span>
+       <Link to="/" className="flex items-center gap-2">
+          <img src={unispaceLogo} alt="UNISPACE.NG" className="h-10 w-10 rounded-lg object-cover" />
+          <span className="font-display text-xl font-bold text-foreground">UNISPACE.NG</span>
         </Link>
         <nav className="flex items-center gap-1">
           <Button variant="ghost" size="sm" onClick={() => navigate("/properties")}>
