@@ -14,6 +14,7 @@ import PropertyDetail from "./pages/PropertyDetail";
 import MyMatches from "./pages/MyMatches";
 import Dashboard from "./pages/Dashboard";
 import LandlordDashboard from "./pages/LandlordDashboard";
+import LandlordOnboarding from "./pages/LandlordOnboarding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/my-matches" element={<MyMatches />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/landlord" element={<LandlordDashboard />} />
+            <Route path="/landlord/register" element={<LandlordOnboarding />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
