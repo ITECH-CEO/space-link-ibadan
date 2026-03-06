@@ -33,10 +33,16 @@ export function Navbar() {
                 </Button>
               )}
               {isLandlord && (
-                <Button variant="ghost" size="sm" onClick={() => navigate("/landlord")}>
-                  <Home className="mr-1.5 h-4 w-4" />
-                  <span className="hidden sm:inline">My Properties</span>
-                </Button>
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/landlord")}>
+                    <Home className="mr-1.5 h-4 w-4" />
+                    <span className="hidden sm:inline">My Properties</span>
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/landlord/register")}>
+                    <Building2 className="mr-1.5 h-4 w-4" />
+                    <span className="hidden sm:inline">Add Property</span>
+                  </Button>
+                </>
               )}
               {isAdmin && (
                 <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>

@@ -6,6 +6,7 @@ import { Building2, Users, Shield, Handshake, ArrowRight, MapPin } from "lucide-
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 import unispaceLogo from "@/assets/unispace-logo.jpg";
 
 const features = [
@@ -149,11 +150,12 @@ export default function Index() {
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} UNISPACE.NG — Verified. Secure. Reliable.
           </p>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+           <div className="flex items-center gap-1 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" /> Nigeria
           </div>
         </div>
       </footer>
+      <WhatsAppButton />
     </div>
   );
 }

@@ -13,12 +13,15 @@ interface Client {
   budget_max: number | null;
   preferences: string[] | null;
   verification_status: string;
+  course: string | null;
+  faculty: string | null;
+  level: string | null;
 }
 
 function computeBaseScore(a: Client, b: Client): number {
   let score = 0;
 
-  // Budget overlap (0-40 points)
+  // Budget overlap (0-25 points)
   const aMin = a.budget_min ?? 0, aMax = a.budget_max ?? Infinity;
   const bMin = b.budget_min ?? 0, bMax = b.budget_max ?? Infinity;
   const overlapStart = Math.max(aMin, bMin);
@@ -26,49 +29,64 @@ function computeBaseScore(a: Client, b: Client): number {
   if (overlapEnd >= overlapStart) {
     const overlapRange = overlapEnd - overlapStart;
     const totalRange = Math.max(aMax, bMax) - Math.min(aMin, bMin) || 1;
-    score += Math.round(40 * Math.min(1, overlapRange / totalRange));
+    score += Math.round(25 * Math.min(1, overlapRange / totalRange));
   }
 
-  // Preference overlap (0-40 points)
+  // Preference overlap (0-20 points)
   const aTags = a.preferences ?? [];
   const bTags = b.preferences ?? [];
   if (aTags.length > 0 && bTags.length > 0) {
     const setA = new Set(aTags.map(t => t.toLowerCase()));
     const matches = bTags.filter(t => setA.has(t.toLowerCase())).length;
     const total = new Set([...aTags, ...bTags]).size;
-    score += Math.round(40 * (matches / total));
+    score += Math.round(20 * (matches / total));
   } else {
-    score += 10;
+    score += 5;
   }
 
-  // Verification bonus (0-20 points)
-  if (a.verification_status === "approved") score += 10;
-  if (b.verification_status === "approved") score += 10;
+  // Same faculty (0-20 points)
+  if (a.faculty && b.faculty && a.faculty.toLowerCase() === b.faculty.toLowerCase()) {
+    score += 20;
+  }
+
+  // Same or related course (0-15 points)
+  if (a.course && b.course) {
+    if (a.course.toLowerCase() === b.course.toLowerCase()) {
+      score += 15;
+    } else if (a.faculty && b.faculty && a.faculty.toLowerCase() === b.faculty.toLowerCase()) {
+      score += 5; // Same faculty, different course
+    }
+  }
+
+  // Verification bonus (0-10 points)
+  if (a.verification_status === "approved") score += 5;
+  if (b.verification_status === "approved") score += 5;
+
+  // Same level bonus (0-10 points)
+  if (a.level && b.level && a.level === b.level) {
+    score += 10;
+  }
 
   return Math.min(100, score);
 }
 
 async function getAIReasoning(
-  a: Client,
-  b: Client,
-  baseScore: number,
-  apiKey: string
+  a: Client, b: Client, baseScore: number, apiKey: string
 ): Promise<{ score: number; reasoning: string }> {
   try {
-    const prompt = `You are a student housing roommate compatibility analyst. Given two potential roommates, provide a compatibility assessment.
+    const prompt = `You are a Nigerian university student housing roommate compatibility analyst. Given two potential roommates, provide a compatibility assessment.
 
-Client A: "${a.full_name}" - Budget: ₦${a.budget_min ?? '?'}-₦${a.budget_max ?? '?'}, Preferences: ${(a.preferences ?? []).join(', ') || 'none listed'}
-Client B: "${b.full_name}" - Budget: ₦${b.budget_min ?? '?'}-₦${b.budget_max ?? '?'}, Preferences: ${(b.preferences ?? []).join(', ') || 'none listed'}
+Client A: "${a.full_name}" - Budget: ₦${a.budget_min ?? '?'}-₦${a.budget_max ?? '?'}, Faculty: ${a.faculty || 'unknown'}, Course: ${a.course || 'unknown'}, Level: ${a.level || 'unknown'}, Preferences: ${(a.preferences ?? []).join(', ') || 'none listed'}
+Client B: "${b.full_name}" - Budget: ₦${b.budget_min ?? '?'}-₦${b.budget_max ?? '?'}, Faculty: ${b.faculty || 'unknown'}, Course: ${b.course || 'unknown'}, Level: ${b.level || 'unknown'}, Preferences: ${(b.preferences ?? []).join(', ') || 'none listed'}
 Algorithm base score: ${baseScore}%
+
+Consider: Same faculty/course means they can share study materials. Same level means similar schedules. Matching preferences means better cohabitation.
 
 Respond with ONLY valid JSON (no markdown): {"score": <adjusted 0-100>, "reasoning": "<2-3 sentence explanation>"}`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [{ role: "user", content: prompt }],
@@ -118,26 +136,42 @@ serve(async (req) => {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const body = await req.json().catch(() => ({}));
+    const targetClientId = body.client_id;
+
+    // Check if admin OR the requesting client themselves
     const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: user.id });
-    if (!isAdmin) {
+    
+    // If not admin, verify they're requesting for themselves
+    if (!isAdmin && targetClientId) {
+      const { data: clientCheck } = await supabase
+        .from("clients")
+        .select("id")
+        .eq("id", targetClientId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!clientCheck) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else if (!isAdmin && !targetClientId) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const body = await req.json().catch(() => ({}));
-    const targetClientId = body.client_id;
-
-    // Fetch approved clients
+    // Fetch clients seeking roommates (or all approved if admin)
     let clientQuery = supabase
       .from("clients")
-      .select("id, full_name, budget_min, budget_max, preferences, verification_status")
-      .eq("verification_status", "approved");
+      .select("id, full_name, budget_min, budget_max, preferences, verification_status, course, faculty, level")
+      .eq("seeking_roommate", true);
 
     const { data: allClients } = await clientQuery;
     if (!allClients || allClients.length < 2) {
       return new Response(
-        JSON.stringify({ matches_created: 0, message: "Need at least 2 approved clients for roommate matching." }),
+        JSON.stringify({ matches_created: 0, message: "Need at least 2 clients seeking roommates. Enable 'Looking for a Roommate' on your profile." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -175,11 +209,10 @@ serve(async (req) => {
 
     for (const clientA of clients) {
       for (const clientB of allClients) {
-        if (clientA.id >= clientB.id) continue; // avoid duplicates & self-match
+        if (clientA.id >= clientB.id) continue;
         const key = [clientA.id, clientB.id].sort().join("-");
         if (existingSet.has(key)) continue;
 
-        // Check shared property interest
         const aProps = clientPropertyMap.get(clientA.id) || [];
         const bProps = clientPropertyMap.get(clientB.id) || [];
         let sharedProp: string | null = null;
@@ -197,13 +230,13 @@ serve(async (req) => {
       }
     }
 
-    // Score and filter - use AI for top candidates
+    // Score and filter
     const scored = candidates.map(c => ({
       ...c,
-      baseScore: computeBaseScore(c.a, c.b) + (c.shared_property_id ? 15 : 0),
+      baseScore: computeBaseScore(c.a, c.b) + (c.shared_property_id ? 10 : 0),
     }));
     scored.sort((a, b) => b.baseScore - a.baseScore);
-    const topCandidates = scored.filter(c => c.baseScore >= 25).slice(0, 20);
+    const topCandidates = scored.filter(c => c.baseScore >= 20).slice(0, 20);
 
     // AI-enhance top 10
     const newMatches: Array<{
@@ -223,18 +256,12 @@ serve(async (req) => {
         reasoning = ai.reasoning;
       }
 
-      if (c.shared_property_id) {
-        reasoning += " Both interested in the same property.";
-      }
+      if (c.shared_property_id) reasoning += " Both interested in the same property.";
 
       newMatches.push({
-        client_a_id: c.a.id,
-        client_b_id: c.b.id,
-        property_id: c.shared_property_id,
-        room_type_id: c.shared_room_type_id,
-        compatibility_score: Math.min(100, score),
-        ai_reasoning: reasoning,
-        status: "pending",
+        client_a_id: c.a.id, client_b_id: c.b.id,
+        property_id: c.shared_property_id, room_type_id: c.shared_room_type_id,
+        compatibility_score: Math.min(100, score), ai_reasoning: reasoning, status: "pending",
       });
     }
 
@@ -251,8 +278,8 @@ serve(async (req) => {
       JSON.stringify({
         matches_created: newMatches.length,
         message: newMatches.length > 0
-          ? `Generated ${newMatches.length} roommate matches!`
-          : "No new roommate matches found.",
+          ? `Found ${newMatches.length} compatible roommate(s)! Check your matches.`
+          : "No new roommate matches found. More students need to enable roommate matching.",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
