@@ -5,29 +5,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Handshake, Building2, MapPin, DollarSign, Users } from "lucide-react";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { toast } from "sonner";
+import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2 } from "lucide-react";
 
 interface MatchWithDetails {
-  id: string;
-  status: string;
-  compatibility_score: number | null;
-  created_at: string;
-  property_name: string;
-  property_address: string;
-  property_id: string;
-  room_type_name: string | null;
-  room_type_price: number | null;
+  id: string; status: string; compatibility_score: number | null; created_at: string;
+  property_name: string; property_address: string; property_id: string;
+  room_type_name: string | null; room_type_price: number | null;
 }
 
 interface RoommateMatchDetail {
-  id: string;
-  status: string;
-  compatibility_score: number | null;
-  ai_reasoning: string | null;
-  partner_name: string;
-  property_name: string | null;
+  id: string; status: string; compatibility_score: number | null;
+  ai_reasoning: string | null; partner_name: string; property_name: string | null;
 }
 
 export default function MyMatches() {
@@ -35,19 +28,18 @@ export default function MyMatches() {
   const [matches, setMatches] = useState<MatchWithDetails[]>([]);
   const [roommateMatches, setRoommateMatches] = useState<RoommateMatchDetail[]>([]);
   const [loading, setLoading] = useState(true);
+  const [requesting, setRequesting] = useState(false);
+  const [clientId, setClientId] = useState<string | null>(null);
+  const [seekingRoommate, setSeekingRoommate] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-
     const fetchAll = async () => {
-      // Get client record
-      const { data: client } = await supabase
-        .from("clients")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
+      const { data: client } = await (supabase as any)
+        .from("clients").select("id, seeking_roommate").eq("user_id", user.id).maybeSingle();
       if (!client) { setLoading(false); return; }
+      setClientId(client.id);
+      setSeekingRoommate(client.seeking_roommate || false);
 
       // Property matches
       const { data: propData } = await supabase
@@ -57,14 +49,9 @@ export default function MyMatches() {
         .order("compatibility_score", { ascending: false });
 
       setMatches((propData || []).map((m: any) => ({
-        id: m.id,
-        status: m.status,
-        compatibility_score: m.compatibility_score,
-        created_at: m.created_at,
-        property_name: m.properties?.property_name || "—",
-        property_address: m.properties?.address || "",
-        property_id: m.property_id,
-        room_type_name: m.room_types?.name || null,
+        id: m.id, status: m.status, compatibility_score: m.compatibility_score, created_at: m.created_at,
+        property_name: m.properties?.property_name || "—", property_address: m.properties?.address || "",
+        property_id: m.property_id, room_type_name: m.room_types?.name || null,
         room_type_price: m.room_types?.price || null,
       })));
 
@@ -76,36 +63,50 @@ export default function MyMatches() {
         .order("compatibility_score", { ascending: false });
 
       if (rmData && rmData.length > 0) {
-        const partnerIds = rmData.map((r: any) =>
-          r.client_a_id === client.id ? r.client_b_id : r.client_a_id
-        );
-        const { data: partners } = await supabase
-          .from("clients")
-          .select("id, full_name")
-          .in("id", partnerIds);
+        const partnerIds = rmData.map((r: any) => r.client_a_id === client.id ? r.client_b_id : r.client_a_id);
+        const { data: partners } = await supabase.from("clients").select("id, full_name").in("id", partnerIds);
         const pMap = new Map((partners || []).map(p => [p.id, p.full_name]));
 
         setRoommateMatches(rmData.map((r: any) => {
           const partnerId = r.client_a_id === client.id ? r.client_b_id : r.client_a_id;
           return {
-            id: r.id,
-            status: r.status,
-            compatibility_score: r.compatibility_score,
-            ai_reasoning: r.ai_reasoning,
-            partner_name: pMap.get(partnerId) || "—",
+            id: r.id, status: r.status, compatibility_score: r.compatibility_score,
+            ai_reasoning: r.ai_reasoning, partner_name: pMap.get(partnerId) || "—",
             property_name: r.properties?.property_name || null,
           };
         }));
       }
-
       setLoading(false);
     };
-
     fetchAll();
   }, [user]);
 
   if (authLoading) return null;
   if (!user) return <Navigate to="/auth" replace />;
+
+  const requestRoommateMatch = async () => {
+    if (!clientId) { toast.error("Complete your profile first"); return; }
+    setRequesting(true);
+    try {
+      // Enable seeking_roommate flag
+      await (supabase as any).from("clients").update({ seeking_roommate: true }).eq("id", clientId);
+      setSeekingRoommate(true);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("Not authenticated"); return; }
+      const res = await supabase.functions.invoke("roommate-match", { body: { client_id: clientId } });
+      if (res.error) toast.error(res.error.message || "Matching failed");
+      else {
+        toast.success(res.data?.message || "Roommate match request submitted! Check back soon.");
+        // Refresh
+        window.location.reload();
+      }
+    } catch (err: any) {
+      toast.error(err.message || "An error occurred");
+    } finally {
+      setRequesting(false);
+    }
+  };
 
   const statusColors: Record<string, string> = {
     pending: "bg-warning/10 text-warning border-warning/20",
@@ -126,9 +127,7 @@ export default function MyMatches() {
         </div>
 
         {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
-          </div>
+          <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}</div>
         ) : (
           <Tabs defaultValue="properties">
             <TabsList className="mb-4">
@@ -171,9 +170,7 @@ export default function MyMatches() {
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-2">
-                              <div className={`text-lg font-bold ${scoreClass(m.compatibility_score)}`}>
-                                {m.compatibility_score ?? 0}%
-                              </div>
+                              <div className={`text-lg font-bold ${scoreClass(m.compatibility_score)}`}>{m.compatibility_score ?? 0}%</div>
                               <Badge variant="outline" className={statusColors[m.status] || ""}>{m.status}</Badge>
                             </div>
                           </div>
@@ -186,12 +183,40 @@ export default function MyMatches() {
             </TabsContent>
 
             <TabsContent value="roommates">
+              {/* Request Roommate Match Button */}
+              <Card className="mb-4 border-primary/20">
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-sm">Find a Roommate</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {seekingRoommate
+                          ? "You're actively looking for roommates. We'll notify you when we find a match!"
+                          : "Request AI-powered roommate matching based on your course, faculty, and preferences."}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={requestRoommateMatch}
+                      disabled={requesting}
+                      size="sm"
+                      className="gradient-primary text-primary-foreground"
+                    >
+                      {requesting ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finding...</>
+                      ) : (
+                        <><Sparkles className="mr-2 h-4 w-4" />{seekingRoommate ? "Re-match" : "Find Roommate"}</>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               {roommateMatches.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Users className="mx-auto h-16 w-16 text-muted-foreground/30 mb-4" />
                     <h2 className="text-lg font-semibold mb-2">No Roommate Matches Yet</h2>
-                    <p className="text-muted-foreground">Our system will find compatible roommates for you soon.</p>
+                    <p className="text-muted-foreground">Click "Find Roommate" above and make sure your profile has your course and faculty info.</p>
                   </CardContent>
                 </Card>
               ) : (
@@ -210,14 +235,10 @@ export default function MyMatches() {
                                 <Building2 className="inline h-3 w-3 mr-1" />Shared interest: {r.property_name}
                               </p>
                             )}
-                            {r.ai_reasoning && (
-                              <p className="text-xs text-muted-foreground mt-2 italic">"{r.ai_reasoning}"</p>
-                            )}
+                            {r.ai_reasoning && <p className="text-xs text-muted-foreground mt-2 italic">"{r.ai_reasoning}"</p>}
                           </div>
                           <div className="flex flex-col items-end gap-2">
-                            <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>
-                              {r.compatibility_score ?? 0}%
-                            </div>
+                            <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
                             <Badge variant="outline" className={statusColors[r.status] || ""}>{r.status}</Badge>
                           </div>
                         </div>
@@ -230,6 +251,7 @@ export default function MyMatches() {
           </Tabs>
         )}
       </main>
+      <WhatsAppButton />
     </div>
   );
 }
