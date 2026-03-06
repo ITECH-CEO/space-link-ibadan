@@ -19,19 +19,23 @@ export type Database = {
           admin_notes: string | null
           budget_max: number | null
           budget_min: number | null
+          course: string | null
           created_at: string
           current_photo_url: string | null
           email: string | null
+          faculty: string | null
           full_name: string
           government_id_url: string | null
           guarantor_name: string | null
           guarantor_phone: string | null
           guarantor_relationship: string | null
           id: string
+          level: string | null
           nin: string | null
           phone: string | null
           preferences: string[] | null
           proof_of_admission_url: string | null
+          seeking_roommate: boolean
           updated_at: string
           user_id: string
           verification_status: Database["public"]["Enums"]["verification_status"]
@@ -40,19 +44,23 @@ export type Database = {
           admin_notes?: string | null
           budget_max?: number | null
           budget_min?: number | null
+          course?: string | null
           created_at?: string
           current_photo_url?: string | null
           email?: string | null
+          faculty?: string | null
           full_name: string
           government_id_url?: string | null
           guarantor_name?: string | null
           guarantor_phone?: string | null
           guarantor_relationship?: string | null
           id?: string
+          level?: string | null
           nin?: string | null
           phone?: string | null
           preferences?: string[] | null
           proof_of_admission_url?: string | null
+          seeking_roommate?: boolean
           updated_at?: string
           user_id: string
           verification_status?: Database["public"]["Enums"]["verification_status"]
@@ -61,19 +69,23 @@ export type Database = {
           admin_notes?: string | null
           budget_max?: number | null
           budget_min?: number | null
+          course?: string | null
           created_at?: string
           current_photo_url?: string | null
           email?: string | null
+          faculty?: string | null
           full_name?: string
           government_id_url?: string | null
           guarantor_name?: string | null
           guarantor_phone?: string | null
           guarantor_relationship?: string | null
           id?: string
+          level?: string | null
           nin?: string | null
           phone?: string | null
           preferences?: string[] | null
           proof_of_admission_url?: string | null
+          seeking_roommate?: boolean
           updated_at?: string
           user_id?: string
           verification_status?: Database["public"]["Enums"]["verification_status"]
