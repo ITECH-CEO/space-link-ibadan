@@ -16,6 +16,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 export function ClientsTab() {
   const [clients, setClients] = useState<Tables<"clients">[]>([]);
+  const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [editClient, setEditClient] = useState<Tables<"clients"> | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -27,6 +28,13 @@ export function ClientsTab() {
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
     setClients(data || []);
+    
+    // Fetch admin notes separately from secure table
+    const { data: notesData } = await (supabase as any).from("client_admin_notes").select("client_id, notes");
+    const notesMap: Record<string, string> = {};
+    (notesData || []).forEach((n: any) => { if (n.notes) notesMap[n.client_id] = n.notes; });
+    setAdminNotes(notesMap);
+    
     setLoading(false);
   };
 

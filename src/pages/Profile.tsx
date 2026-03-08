@@ -249,9 +249,9 @@ export default function Profile() {
                 </h3>
                 <p className="text-xs text-muted-foreground">Upload clear photos of your documents. Max 5MB each.</p>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <FileUpload bucket="property-media" folder="client-docs" label="Government ID" currentUrl={form.government_id_url || null} onUploaded={(url) => setForm({ ...form, government_id_url: url })} />
-                  <FileUpload bucket="property-media" folder="client-docs" label="Proof of Admission" currentUrl={form.proof_of_admission_url || null} onUploaded={(url) => setForm({ ...form, proof_of_admission_url: url })} />
-                  <FileUpload bucket="property-media" folder="client-photos" label="Current Photo" currentUrl={form.current_photo_url || null} onUploaded={(url) => setForm({ ...form, current_photo_url: url })} />
+                  <FileUpload bucket="client-documents" folder={user.id} label="Government ID" currentUrl={form.government_id_url || null} onUploaded={(url) => setForm({ ...form, government_id_url: url })} />
+                  <FileUpload bucket="client-documents" folder={user.id} label="Proof of Admission" currentUrl={form.proof_of_admission_url || null} onUploaded={(url) => setForm({ ...form, proof_of_admission_url: url })} />
+                  <FileUpload bucket="client-documents" folder={user.id} label="Current Photo" currentUrl={form.current_photo_url || null} onUploaded={(url) => setForm({ ...form, current_photo_url: url })} />
                 </div>
 
                 <h3 className="pt-4 font-display font-semibold">Guarantor Details</h3>
