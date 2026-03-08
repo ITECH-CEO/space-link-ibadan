@@ -524,32 +524,19 @@ export default function PropertyDetail() {
                       )}
                     </div>
 
-                    {/* WhatsApp confirmation */}
                     {whatsAppMessage && (
-                      <a
-                        href={`https://wa.me/2349137425552?text=${encodeURIComponent(whatsAppMessage)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
+                      <a href={`https://wa.me/2349137425552?text=${encodeURIComponent(whatsAppMessage)}`} target="_blank" rel="noopener noreferrer" className="block">
                         <Button variant="outline" className="w-full border-success/30 text-success hover:bg-success/10">
                           <MessageSquare className="mr-2 h-4 w-4" /> Confirm via WhatsApp
                         </Button>
                       </a>
                     )}
 
-                    {/* Cancel button */}
-                    <Button
-                      variant="outline"
-                      className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
-                      onClick={cancelBooking}
-                      disabled={cancelling}
-                    >
+                    <Button variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10" onClick={cancelBooking} disabled={cancelling}>
                       <XCircle className="mr-2 h-4 w-4" />
                       {cancelling ? "Cancelling..." : "Cancel Inspection"}
                     </Button>
 
-                    {/* Post-inspection feedback */}
                     {bookingPassed && !hasFeedback && (
                       <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
                         <DialogTrigger asChild>
@@ -601,15 +588,16 @@ export default function PropertyDetail() {
                             <CalendarDays className="mr-2 h-4 w-4" /> Book Again
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
-                          <DialogHeader><DialogTitle>Pick an Inspection Date & Time</DialogTitle></DialogHeader>
-                          <BookingCalendar
-                            selectedDate={selectedDate}
-                            onSelectDate={setSelectedDate}
-                            isDayAvailable={isDayAvailable}
-                            slotsForDate={slotsForDate}
-                            booking={booking}
-                            onBookSlot={bookSlot}
+                        <DialogContent className="sm:max-w-lg">
+                          <DialogHeader><DialogTitle>Book Inspection</DialogTitle></DialogHeader>
+                          <InspectionBookingWizard
+                            propertyId={id!}
+                            propertyName={property.property_name}
+                            propertyAddress={property.address}
+                            propertyType={property.property_type}
+                            slots={slots}
+                            onBookingComplete={(info) => { setBookingInfo(info); setDialogOpen(false); }}
+                            onClose={() => setDialogOpen(false)}
                           />
                         </DialogContent>
                       </Dialog>
@@ -633,15 +621,16 @@ export default function PropertyDetail() {
                         <CalendarDays className="mr-2 h-4 w-4" /> Book Inspection
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader><DialogTitle>Pick an Inspection Date & Time</DialogTitle></DialogHeader>
-                      <BookingCalendar
-                        selectedDate={selectedDate}
-                        onSelectDate={setSelectedDate}
-                        isDayAvailable={isDayAvailable}
-                        slotsForDate={slotsForDate}
-                        booking={booking}
-                        onBookSlot={bookSlot}
+                    <DialogContent className="sm:max-w-lg">
+                      <DialogHeader><DialogTitle>Book Inspection</DialogTitle></DialogHeader>
+                      <InspectionBookingWizard
+                        propertyId={id!}
+                        propertyName={property.property_name}
+                        propertyAddress={property.address}
+                        propertyType={property.property_type}
+                        slots={slots}
+                        onBookingComplete={(info) => { setBookingInfo(info); setDialogOpen(false); }}
+                        onClose={() => setDialogOpen(false)}
                       />
                     </DialogContent>
                   </Dialog>
