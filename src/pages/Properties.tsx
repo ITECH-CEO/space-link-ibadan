@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,14 +10,20 @@ import { VerificationBadge } from "@/components/VerificationBadge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Building2, MapPin, Users, Search, DollarSign, SlidersHorizontal, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Building2, MapPin, Users, Search, DollarSign, SlidersHorizontal, X, Heart, Map, List } from "lucide-react";
+import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import { PropertyMap } from "@/components/PropertyMap";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export default function Properties() {
+  const { user } = useAuth();
   const [properties, setProperties] = useState<PropertyWithRooms[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -24,6 +31,8 @@ export default function Properties() {
   const [facilityFilter, setFacilityFilter] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -35,9 +44,37 @@ export default function Properties() {
         setProperties((data as PropertyWithRooms[]) || []);
         setLoading(false);
       });
-  }, []);
 
-  // Collect all unique facilities
+    // Load saved properties
+    if (user) {
+      (supabase as any)
+        .from("saved_properties")
+        .select("property_id")
+        .eq("user_id", user.id)
+        .then(({ data }: any) => {
+          if (data) setSavedIds(new Set(data.map((d: any) => d.property_id)));
+        });
+    }
+  }, [user]);
+
+  const toggleSave = async (propertyId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) { toast.error("Please sign in to save properties"); return; }
+    setSavingId(propertyId);
+
+    if (savedIds.has(propertyId)) {
+      await (supabase as any).from("saved_properties").delete().eq("user_id", user.id).eq("property_id", propertyId);
+      setSavedIds((prev) => { const n = new Set(prev); n.delete(propertyId); return n; });
+      toast.success("Removed from saved");
+    } else {
+      await (supabase as any).from("saved_properties").insert({ user_id: user.id, property_id: propertyId });
+      setSavedIds((prev) => new Set(prev).add(propertyId));
+      toast.success("Property saved!");
+    }
+    setSavingId(null);
+  };
+
   const allFacilities = [...new Set(properties.flatMap((p) => p.facilities || []))].sort();
 
   const getMinPrice = (p: PropertyWithRooms) => {
@@ -69,6 +106,75 @@ export default function Properties() {
     (typeFilter !== "all" ? 1 : 0) +
     (maxPrice < 500000 ? 1 : 0) +
     facilityFilter.length;
+
+  const PropertyCard = ({ p }: { p: PropertyWithRooms }) => {
+    const minPrice = getMinPrice(p);
+    return (
+      <Link key={p.id} to={`/property/${p.id}`}>
+        <Card className="overflow-hidden transition-shadow hover:shadow-lg cursor-pointer h-full">
+          <div className="gradient-primary p-4">
+            <div className="flex items-center justify-between">
+              <Badge variant="outline" className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 capitalize">
+                {p.property_type}
+              </Badge>
+              <div className="flex items-center gap-2">
+                <VerificationBadge status={p.verification_status} />
+                {user && (
+                  <button
+                    onClick={(e) => toggleSave(p.id, e)}
+                    disabled={savingId === p.id}
+                    className="p-1 rounded-full hover:bg-primary-foreground/20 transition-colors"
+                  >
+                    <Heart className={`h-4 w-4 ${savedIds.has(p.id) ? "fill-destructive text-destructive" : "text-primary-foreground"}`} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          <CardContent className="pt-4">
+            <h3 className="mb-1 font-display text-lg font-semibold">{p.property_name}</h3>
+            <div className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
+              <MapPin className="h-3 w-3" />{p.address}
+            </div>
+            {p.proximity_to_campus && (
+              <p className="mb-3 text-xs text-muted-foreground">📍 {p.proximity_to_campus}</p>
+            )}
+            <div className="mb-3 flex items-center gap-4 text-sm">
+              <span className="flex items-center gap-1">
+                <Users className="h-4 w-4 text-primary" />
+                {p.available_rooms}/{p.total_rooms} rooms
+              </span>
+              {minPrice && (
+                <span className="flex items-center gap-1 font-semibold text-primary">
+                  <DollarSign className="h-4 w-4" />
+                  From ₦{minPrice.toLocaleString()}
+                </span>
+              )}
+            </div>
+            {p.facilities && p.facilities.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {p.facilities.map((f) => (
+                  <Badge key={f} variant="secondary" className="text-xs">{f}</Badge>
+                ))}
+              </div>
+            )}
+            {p.room_types && p.room_types.length > 0 && (
+              <div className="border-t pt-2 mt-2">
+                <p className="text-xs font-semibold text-muted-foreground mb-1">Room Types:</p>
+                <div className="flex flex-wrap gap-1">
+                  {p.room_types.map((rt) => (
+                    <Badge key={rt.id} variant="outline" className="text-xs">
+                      {rt.name} — ₦{rt.price.toLocaleString()}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </Link>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,7 +217,6 @@ export default function Properties() {
           <Card className="mb-6">
             <CardContent className="pt-6 space-y-5">
               <div className="grid gap-4 sm:grid-cols-3">
-                {/* Property Type */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Property Type</label>
                   <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -124,59 +229,31 @@ export default function Properties() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Max Price */}
                 <div className="space-y-2 sm:col-span-2">
                   <label className="text-sm font-medium">
                     Max Price: <span className="text-primary font-bold">₦{maxPrice.toLocaleString()}</span>
                   </label>
-                  <Slider
-                    value={[maxPrice]}
-                    onValueChange={([v]) => setMaxPrice(v)}
-                    min={10000}
-                    max={500000}
-                    step={5000}
-                  />
+                  <Slider value={[maxPrice]} onValueChange={([v]) => setMaxPrice(v)} min={10000} max={500000} step={5000} />
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>₦10,000</span>
-                    <span>₦500,000</span>
+                    <span>₦10,000</span><span>₦500,000</span>
                   </div>
                 </div>
               </div>
-
-              {/* Facilities */}
               {allFacilities.length > 0 && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Facilities</label>
                   <div className="flex flex-wrap gap-2">
                     {allFacilities.map((f) => (
-                      <button
-                        key={f}
-                        onClick={() => toggleFacility(f)}
-                        className={`rounded-full px-3 py-1 text-xs transition-colors ${
-                          facilityFilter.includes(f)
-                            ? "gradient-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground hover:bg-muted/80"
-                        }`}
-                      >
+                      <button key={f} onClick={() => toggleFacility(f)}
+                        className={`rounded-full px-3 py-1 text-xs transition-colors ${facilityFilter.includes(f) ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
                         {f}
                       </button>
                     ))}
                   </div>
                 </div>
               )}
-
               {activeFilterCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setTypeFilter("all");
-                    setMaxPrice(500000);
-                    setFacilityFilter([]);
-                  }}
-                  className="text-destructive"
-                >
+                <Button variant="ghost" size="sm" onClick={() => { setTypeFilter("all"); setMaxPrice(500000); setFacilityFilter([]); }} className="text-destructive">
                   <X className="mr-1 h-3 w-3" /> Clear all filters
                 </Button>
               )}
@@ -184,9 +261,11 @@ export default function Properties() {
           </Card>
         )}
 
-        {/* Results count */}
         <p className="mb-4 text-sm text-muted-foreground">
           {filtered.length} {filtered.length === 1 ? "property" : "properties"} found
+          {savedIds.size > 0 && (
+            <span className="ml-2">· <Heart className="inline h-3 w-3 fill-destructive text-destructive" /> {savedIds.size} saved</span>
+          )}
         </p>
 
         {loading ? (
@@ -197,65 +276,39 @@ export default function Properties() {
             <p className="text-muted-foreground">No properties found. Try adjusting your filters.</p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((p) => {
-              const minPrice = getMinPrice(p);
-              return (
-                <Link key={p.id} to={`/property/${p.id}`}>
-                  <Card className="overflow-hidden transition-shadow hover:shadow-lg cursor-pointer">
-                    <div className="gradient-primary p-4">
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 capitalize">
-                          {p.property_type}
-                        </Badge>
-                        <VerificationBadge status={p.verification_status} />
-                      </div>
-                    </div>
-                    <CardContent className="pt-4">
-                      <h3 className="mb-1 font-display text-lg font-semibold">{p.property_name}</h3>
-                      <div className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
-                        <MapPin className="h-3 w-3" />{p.address}
-                      </div>
-                      {p.proximity_to_campus && (
-                        <p className="mb-3 text-xs text-muted-foreground">📍 {p.proximity_to_campus}</p>
-                      )}
-                      <div className="mb-3 flex items-center gap-4 text-sm">
-                        <span className="flex items-center gap-1">
-                          <Users className="h-4 w-4 text-primary" />
-                          {p.available_rooms}/{p.total_rooms} rooms
-                        </span>
-                        {minPrice && (
-                          <span className="flex items-center gap-1 font-semibold text-primary">
-                            <DollarSign className="h-4 w-4" />
-                            From ₦{minPrice.toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                      {p.facilities && p.facilities.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {p.facilities.map((f) => (
-                            <Badge key={f} variant="secondary" className="text-xs">{f}</Badge>
-                          ))}
-                        </div>
-                      )}
-                      {p.room_types && p.room_types.length > 0 && (
-                        <div className="border-t pt-2 mt-2">
-                          <p className="text-xs font-semibold text-muted-foreground mb-1">Room Types:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {p.room_types.map((rt) => (
-                              <Badge key={rt.id} variant="outline" className="text-xs">
-                                {rt.name} — ₦{rt.price.toLocaleString()}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
+          <Tabs defaultValue="list">
+            <TabsList className="mb-4">
+              <TabsTrigger value="list"><List className="mr-2 h-4 w-4" />List</TabsTrigger>
+              <TabsTrigger value="map"><Map className="mr-2 h-4 w-4" />Map</TabsTrigger>
+              {savedIds.size > 0 && (
+                <TabsTrigger value="saved"><Heart className="mr-2 h-4 w-4" />Saved ({savedIds.size})</TabsTrigger>
+              )}
+            </TabsList>
+
+            <TabsContent value="list">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filtered.map((p) => <PropertyCard key={p.id} p={p} />)}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="map">
+              <PropertyMap properties={filtered} />
+            </TabsContent>
+
+            {savedIds.size > 0 && (
+              <TabsContent value="saved">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {filtered.filter((p) => savedIds.has(p.id)).map((p) => <PropertyCard key={p.id} p={p} />)}
+                </div>
+                {filtered.filter((p) => savedIds.has(p.id)).length === 0 && (
+                  <div className="text-center py-12">
+                    <Heart className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
+                    <p className="text-muted-foreground">No saved properties match your current filters.</p>
+                  </div>
+                )}
+              </TabsContent>
+            )}
+          </Tabs>
         )}
       </main>
     </div>
