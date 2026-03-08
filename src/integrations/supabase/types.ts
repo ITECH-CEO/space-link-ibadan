@@ -186,6 +186,8 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          payment_reference: string | null
+          payment_status: string
           property_id: string
           slot_id: string
           status: string
@@ -196,6 +198,8 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          payment_reference?: string | null
+          payment_status?: string
           property_id: string
           slot_id: string
           status?: string
@@ -206,6 +210,8 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          payment_reference?: string | null
+          payment_status?: string
           property_id?: string
           slot_id?: string
           status?: string
@@ -492,6 +498,36 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_fees: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          fee_type: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          fee_type: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          fee_type?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -708,6 +744,8 @@ export type Database = {
           compatibility_score: number | null
           created_at: string
           id: string
+          payment_reference: string | null
+          payment_status: string
           property_id: string | null
           room_type_id: string | null
           status: string
@@ -720,6 +758,8 @@ export type Database = {
           compatibility_score?: number | null
           created_at?: string
           id?: string
+          payment_reference?: string | null
+          payment_status?: string
           property_id?: string | null
           room_type_id?: string | null
           status?: string
@@ -732,6 +772,8 @@ export type Database = {
           compatibility_score?: number | null
           created_at?: string
           id?: string
+          payment_reference?: string | null
+          payment_status?: string
           property_id?: string | null
           room_type_id?: string | null
           status?: string
