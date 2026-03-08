@@ -26,7 +26,7 @@ import { OccupancyTab } from "@/components/dashboard/OccupancyTab";
 import {
   LayoutDashboard, Users, Building2, Handshake, Banknote, Wrench,
   ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings,
-  LogOut, Moon, Sun, Home, ChevronRight,
+  LogOut, Moon, Sun, Home, ChevronRight, MessageSquareWarning,
 } from "lucide-react";
 
 const navItems = [
