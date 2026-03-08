@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { MatchesTour } from "@/components/tours/MatchesTour";
 import { ClientRentPayments } from "@/components/ClientRentPayments";
 import { ClientComplaintForm } from "@/components/ClientComplaintForm";
+import { ClientComplaintTracker } from "@/components/ClientComplaintTracker";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
