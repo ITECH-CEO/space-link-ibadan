@@ -9,7 +9,8 @@ import { LandlordPaymentsTab } from "@/components/landlord/LandlordPaymentsTab";
 import { LandlordMaintenanceTab } from "@/components/landlord/LandlordMaintenanceTab";
 import { LandlordInspectionsTab } from "@/components/landlord/LandlordInspectionsTab";
 import { LandlordRentTab } from "@/components/landlord/LandlordRentTab";
-import { Building2, Banknote, Wrench, CalendarDays, Bell, Phone, MessageSquare, TrendingUp } from "lucide-react";
+import { LandlordLeaseTab } from "@/components/landlord/LandlordLeaseTab";
+import { Building2, Banknote, Wrench, CalendarDays, Bell, Phone, MessageSquare, TrendingUp, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function LandlordDashboard() {
