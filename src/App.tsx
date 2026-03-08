@@ -16,6 +16,7 @@ import Messages from "./pages/Messages";
 import Dashboard from "./pages/Dashboard";
 import LandlordDashboard from "./pages/LandlordDashboard";
 import LandlordOnboarding from "./pages/LandlordOnboarding";
+import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/landlord" element={<LandlordDashboard />} />
             <Route path="/landlord/register" element={<LandlordOnboarding />} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

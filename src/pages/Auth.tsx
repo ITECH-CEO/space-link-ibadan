@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useSearchParams, Navigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useSearchParams, Navigate, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,15 +11,36 @@ import mycribLogo from "@/assets/mycrib-logo.png";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const isSignUp = searchParams.get("mode") === "signup";
   const [mode, setMode] = useState<"signin" | "signup">(isSignUp ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const [checkingProfile, setCheckingProfile] = useState(false);
+  const { signIn, signUp, user, userRole } = useAuth();
 
-  if (user) return <Navigate to="/profile" replace />;
+  // Redirect logged-in users: new users → onboarding, existing → profile
+  useEffect(() => {
+    if (!user) return;
+    setCheckingProfile(true);
+    (supabase as any)
+      .from("clients")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (data || userRole) {
+          navigate("/profile", { replace: true });
+        } else {
+          navigate("/onboarding", { replace: true });
+        }
+        setCheckingProfile(false);
+      });
+  }, [user, userRole]);
+
+  if (checkingProfile) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
