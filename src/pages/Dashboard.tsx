@@ -54,6 +54,7 @@ const tabComponents: Record<string, React.ComponentType> = {
   matches: MatchesTab, roommates: RoommateMatchesTab, commissions: CommissionsTab,
   inspections: InspectionsTab, rent: RentTrackingTab, complaints: ComplaintsTab,
   platform_complaints: PlatformComplaintsTab, occupancy: OccupancyTab,
+  sponsors: SponsorsTab,
   admins: AdminsTab, analytics: AnalyticsTab, fees: FeesTab, settings: SettingsTab,
 };
 
