@@ -164,11 +164,20 @@ export function PropertiesTab() {
         available_rooms: Number(editForm.available_rooms),
         proximity_to_campus: editForm.proximity_to_campus || null,
         special_notes: editForm.special_notes || null,
-        admin_notes: editForm.admin_notes || null,
         verification_status: editForm.verification_status,
         photos: allPhotos,
       })
       .eq("id", editProperty.id);
+
+    // Save admin notes to separate secure table
+    if (editForm.admin_notes !== undefined) {
+      await (supabase as any).from("property_admin_notes").upsert({
+        property_id: editProperty.id,
+        notes: editForm.admin_notes || null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "property_id" });
+    }
+
     if (error) toast.error(error.message);
     else {
       toast.success("Property updated successfully");
