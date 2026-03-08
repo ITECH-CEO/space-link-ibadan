@@ -19,6 +19,7 @@ import { AnalyticsTab } from "@/components/dashboard/AnalyticsTab";
 import { InspectionsTab } from "@/components/dashboard/InspectionsTab";
 import { FeesTab } from "@/components/dashboard/FeesTab";
 import { SettingsTab } from "@/components/dashboard/SettingsTab";
+import { RentTrackingTab } from "@/components/dashboard/RentTrackingTab";
 import {
   LayoutDashboard, Users, Building2, Handshake, Banknote,
   ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings,
