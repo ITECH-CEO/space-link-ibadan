@@ -10,7 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { toast } from "sonner";
-import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, CreditCard, MessageSquare } from "lucide-react";
+import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, CreditCard, MessageSquare, LayoutGrid } from "lucide-react";
+import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
