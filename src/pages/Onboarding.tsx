@@ -317,7 +317,7 @@ export default function Onboarding() {
                 )}
 
                 {step < STEPS.length - 1 ? (
-                  <Button onClick={next} disabled={!canProceed()} className="gradient-primary text-primary-foreground">
+                  <Button onClick={next} disabled={!canProceed()} className="gradient-primary text-primary-foreground" data-tour="onboarding-next">
                     Next <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
                 ) : (
