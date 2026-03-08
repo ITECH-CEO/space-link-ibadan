@@ -108,84 +108,90 @@ export default function Properties() {
     (maxPrice < 500000 ? 1 : 0) +
     facilityFilter.length;
 
-  const PropertyCard = ({ p }: { p: PropertyWithRooms }) => {
+  const PropertyCard = ({ p, index }: { p: PropertyWithRooms; index: number }) => {
     const minPrice = getMinPrice(p);
     return (
-      <Link key={p.id} to={`/property/${p.id}`}>
-        <Card className="overflow-hidden transition-shadow hover:shadow-lg cursor-pointer h-full">
-          {/* Photo carousel */}
-          <div className="relative">
-            <PropertyCarousel photos={p.photos || []} alt={p.property_name} />
-            <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
-              <Badge variant="outline" className="bg-card/80 backdrop-blur-sm text-foreground border-border capitalize shadow-sm">
-                {p.property_type}
-              </Badge>
-              <VerificationBadge status={p.verification_status} />
-            </div>
-            {user && (
-              <button
-                onClick={(e) => toggleSave(p.id, e)}
-                disabled={savingId === p.id}
-                className="absolute top-3 right-3 z-10 p-2 rounded-full bg-card/60 backdrop-blur-sm hover:bg-card/90 transition-colors shadow-sm"
-              >
-                <Heart className={`h-4 w-4 ${savedIds.has(p.id) ? "fill-destructive text-destructive" : "text-foreground"}`} />
-              </button>
-            )}
-            {minPrice && (
-              <div className="absolute bottom-3 left-3 z-10">
-                <span className="rounded-lg bg-card/90 backdrop-blur-sm px-3 py-1.5 font-display text-sm font-bold text-foreground shadow-sm">
-                  From ₦{minPrice.toLocaleString()}<span className="text-xs font-normal text-muted-foreground">/yr</span>
-                </span>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: index * 0.05 }}
+      >
+        <Link key={p.id} to={`/property/${p.id}`}>
+          <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:glow-primary cursor-pointer h-full card-elevated group">
+            {/* Photo carousel */}
+            <div className="relative">
+              <PropertyCarousel photos={p.photos || []} alt={p.property_name} />
+              <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+                <Badge variant="outline" className="bg-card/80 backdrop-blur-sm text-foreground border-border capitalize shadow-sm">
+                  {p.property_type}
+                </Badge>
+                <VerificationBadge status={p.verification_status} />
               </div>
-            )}
-          </div>
-          <CardContent className="pt-4">
-            <h3 className="mb-1 font-display text-lg font-semibold">{p.property_name}</h3>
-            <div className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
-              <MapPin className="h-3 w-3" />{p.address}
-            </div>
-            <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
-              <span className="flex items-center gap-1">
-                <Users className="h-4 w-4 text-primary" />
-                {p.available_rooms}/{p.total_rooms} rooms
-              </span>
-              {p.distance_to_campus_km && (
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Navigation className="h-3.5 w-3.5" />
-                  {p.distance_to_campus_km}km
-                </span>
+              {user && (
+                <button
+                  onClick={(e) => toggleSave(p.id, e)}
+                  disabled={savingId === p.id}
+                  className="absolute top-3 right-3 z-10 p-2 rounded-full bg-card/60 backdrop-blur-sm hover:bg-card/90 transition-colors shadow-sm"
+                >
+                  <Heart className={`h-4 w-4 ${savedIds.has(p.id) ? "fill-destructive text-destructive" : "text-foreground"}`} />
+                </button>
               )}
-              {(p as any).walkability_rating && (
-                <span className="flex items-center gap-0.5">
-                  <Footprints className="h-3.5 w-3.5 text-muted-foreground" />
-                  {[1,2,3,4,5].map(s => (
-                    <Star key={s} className={`h-3 w-3 ${s <= (p as any).walkability_rating ? "fill-warning text-warning" : "text-muted-foreground/20"}`} />
-                  ))}
-                </span>
+              {minPrice && (
+                <div className="absolute bottom-3 left-3 z-10">
+                  <span className="rounded-lg bg-card/90 backdrop-blur-sm px-3 py-1.5 font-display text-sm font-bold text-foreground shadow-sm">
+                    From ₦{minPrice.toLocaleString()}<span className="text-xs font-normal text-muted-foreground">/yr</span>
+                  </span>
+                </div>
               )}
             </div>
-            {p.facilities && p.facilities.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-2">
-                {p.facilities.map((f) => (
-                  <Badge key={f} variant="secondary" className="text-xs">{f}</Badge>
-                ))}
+            <CardContent className="pt-4">
+              <h3 className="mb-1 font-display text-lg font-semibold group-hover:text-primary transition-colors">{p.property_name}</h3>
+              <div className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
+                <MapPin className="h-3 w-3" />{p.address}
               </div>
-            )}
-            {p.room_types && p.room_types.length > 0 && (
-              <div className="border-t pt-2 mt-2">
-                <p className="text-xs font-semibold text-muted-foreground mb-1">Room Types:</p>
-                <div className="flex flex-wrap gap-1">
-                  {p.room_types.map((rt) => (
-                    <Badge key={rt.id} variant="outline" className="text-xs">
-                      {rt.name} — ₦{rt.price.toLocaleString()}
-                    </Badge>
+              <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
+                <span className="flex items-center gap-1">
+                  <Users className="h-4 w-4 text-primary" />
+                  {p.available_rooms}/{p.total_rooms} rooms
+                </span>
+                {p.distance_to_campus_km && (
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Navigation className="h-3.5 w-3.5" />
+                    {p.distance_to_campus_km}km
+                  </span>
+                )}
+                {(p as any).walkability_rating && (
+                  <span className="flex items-center gap-0.5">
+                    <Footprints className="h-3.5 w-3.5 text-muted-foreground" />
+                    {[1,2,3,4,5].map(s => (
+                      <Star key={s} className={`h-3 w-3 ${s <= (p as any).walkability_rating ? "fill-warning text-warning" : "text-muted-foreground/20"}`} />
+                    ))}
+                  </span>
+                )}
+              </div>
+              {p.facilities && p.facilities.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {p.facilities.map((f) => (
+                    <Badge key={f} variant="secondary" className="text-xs">{f}</Badge>
                   ))}
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </Link>
+              )}
+              {p.room_types && p.room_types.length > 0 && (
+                <div className="border-t border-border pt-2 mt-2">
+                  <p className="text-xs font-semibold text-muted-foreground mb-1">Room Types:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {p.room_types.map((rt) => (
+                      <Badge key={rt.id} variant="outline" className="text-xs">
+                        {rt.name} — ₦{rt.price.toLocaleString()}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </Link>
+      </motion.div>
     );
   };
 
