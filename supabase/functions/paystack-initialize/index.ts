@@ -49,7 +49,8 @@ serve(async (req) => {
     const data = await response.json();
 
     if (!data.status) {
-      return new Response(JSON.stringify({ error: data.message || "Payment initialization failed" }), {
+      console.error("Paystack error response:", JSON.stringify(data));
+      return new Response(JSON.stringify({ error: data.message || "Payment initialization failed", details: data }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
