@@ -265,7 +265,7 @@ export default function MyMatches() {
             </TabsContent>
 
             <TabsContent value="roommates">
-              <Card className="mb-4 border-primary/20 card-elevated">
+              <Card className="mb-4 border-primary/20 card-elevated" data-tour="roommate-find">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div>
