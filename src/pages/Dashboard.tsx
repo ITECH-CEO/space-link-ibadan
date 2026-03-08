@@ -42,6 +42,7 @@ const navItems = [
   { key: "complaints", label: "Maintenance", icon: Wrench, roles: ["super_admin", "manager"] },
   { key: "platform_complaints", label: "Platform Complaints", icon: MessageSquareWarning, roles: ["super_admin", "manager"] },
   { key: "occupancy", label: "Occupancy", icon: Building2, roles: ["super_admin", "manager"] },
+  { key: "sponsors", label: "Sponsors", icon: Award, roles: ["super_admin", "manager"] },
   { key: "admins", label: "Admins", icon: ShieldCheck, roles: ["super_admin"] },
   { key: "analytics", label: "Analytics", icon: BarChart3, roles: ["super_admin", "manager"] },
   { key: "fees", label: "Fees", icon: Settings, roles: ["super_admin"] },
