@@ -249,7 +249,7 @@ export default function Messages() {
           </Card>
 
           {/* Chat area */}
-          <Card className="flex flex-col overflow-hidden">
+          <Card className={`flex flex-col overflow-hidden ${!activeConvo ? "hidden md:flex" : ""}`}>
             {activeConvo ? (
               <>
                 <CardHeader className="py-3 px-4 border-b flex-row items-center gap-3">
