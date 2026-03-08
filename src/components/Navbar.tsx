@@ -108,7 +108,7 @@ export function Navbar() {
               <SheetContent side="right" className="w-64 pt-12">
                 {/* Mobile support contact */}
                 <a
-                  href="https://wa.me/2348000000000"
+                  href="https://wa.me/2349137425552"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 mb-4 p-2 rounded-lg bg-success/10 text-sm"
