@@ -10,7 +10,8 @@ import { CommissionsTab } from "@/components/dashboard/CommissionsTab";
 import { AdminsTab } from "@/components/dashboard/AdminsTab";
 import { AnalyticsTab } from "@/components/dashboard/AnalyticsTab";
 import { InspectionsTab } from "@/components/dashboard/InspectionsTab";
-import { Users, Building2, Handshake, DollarSign, ShieldCheck, UserPlus, BarChart3, CalendarDays } from "lucide-react";
+import { FeesTab } from "@/components/dashboard/FeesTab";
+import { Users, Building2, Handshake, DollarSign, ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
