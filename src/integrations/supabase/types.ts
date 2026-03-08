@@ -565,6 +565,7 @@ export type Database = {
           available_rooms: number | null
           compliance_check: boolean | null
           created_at: string
+          distance_to_campus_km: number | null
           facilities: string[] | null
           id: string
           landlord_email: string | null
@@ -582,9 +583,12 @@ export type Database = {
           proximity_to_campus: string | null
           special_notes: string | null
           total_rooms: number | null
+          transport_options: Json | null
           updated_at: string
+          utility_rating: Json | null
           verification_status: Database["public"]["Enums"]["verification_status"]
           videos: string[] | null
+          walkability_rating: number | null
         }
         Insert: {
           address: string
@@ -592,6 +596,7 @@ export type Database = {
           available_rooms?: number | null
           compliance_check?: boolean | null
           created_at?: string
+          distance_to_campus_km?: number | null
           facilities?: string[] | null
           id?: string
           landlord_email?: string | null
@@ -609,9 +614,12 @@ export type Database = {
           proximity_to_campus?: string | null
           special_notes?: string | null
           total_rooms?: number | null
+          transport_options?: Json | null
           updated_at?: string
+          utility_rating?: Json | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
           videos?: string[] | null
+          walkability_rating?: number | null
         }
         Update: {
           address?: string
@@ -619,6 +627,7 @@ export type Database = {
           available_rooms?: number | null
           compliance_check?: boolean | null
           created_at?: string
+          distance_to_campus_km?: number | null
           facilities?: string[] | null
           id?: string
           landlord_email?: string | null
@@ -636,9 +645,12 @@ export type Database = {
           proximity_to_campus?: string | null
           special_notes?: string | null
           total_rooms?: number | null
+          transport_options?: Json | null
           updated_at?: string
+          utility_rating?: Json | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
           videos?: string[] | null
+          walkability_rating?: number | null
         }
         Relationships: []
       }
