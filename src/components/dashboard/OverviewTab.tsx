@@ -116,17 +116,20 @@ export function OverviewTab() {
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-        {kpis.map((k) => (
-          <Card key={k.label} className="relative overflow-hidden">
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between mb-2">
-                <k.icon className={`h-5 w-5 ${k.color}`} />
+        {kpis.map((k, i) => (
+          <Card key={k.label} className="card-elevated relative overflow-hidden group hover:glow-primary transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardContent className="pt-5 pb-4 relative">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <k.icon className={`h-4.5 w-4.5 ${k.color}`} />
+                </div>
                 {k.trend && (
-                  <span className="text-[10px] text-muted-foreground">{k.trend}</span>
+                  <span className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-full">{k.trend}</span>
                 )}
               </div>
-              <p className="text-2xl font-bold tracking-tight">{k.value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{k.label}</p>
+              <p className="text-2xl font-bold tracking-tight font-display">{k.value}</p>
+              <p className="text-xs text-muted-foreground mt-1">{k.label}</p>
             </CardContent>
           </Card>
         ))}
