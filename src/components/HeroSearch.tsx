@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin, DollarSign, Home } from "lucide-react";
+import { Search, MapPin, Home, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,19 +20,21 @@ export function HeroSearch() {
   };
 
   return (
-    <div className="mx-auto mt-10 max-w-3xl">
-      <div className="rounded-2xl bg-card/95 p-3 shadow-2xl backdrop-blur-sm">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
+    <div className="mx-auto mt-8 max-w-4xl">
+      <div className="rounded-2xl bg-card p-4 shadow-2xl">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
+          {/* Location */}
           <div className="relative sm:col-span-2">
             <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Campus or location..."
+              placeholder="Search for a campus or area..."
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="pl-10 border-0 bg-muted/50 h-12"
+              className="pl-10 border-0 bg-muted/50 h-12 text-base"
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             />
           </div>
+          {/* Type */}
           <Select value={type} onValueChange={setType}>
             <SelectTrigger className="border-0 bg-muted/50 h-12">
               <Home className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -45,8 +47,23 @@ export function HeroSearch() {
               <SelectItem value="shared">Shared</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleSearch} className="gradient-accent text-accent-foreground h-12 font-semibold">
-            <Search className="mr-2 h-4 w-4" /> Search
+          {/* Budget */}
+          <Select value={budget} onValueChange={setBudget}>
+            <SelectTrigger className="border-0 bg-muted/50 h-12">
+              <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
+              <SelectValue placeholder="Budget" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any Budget</SelectItem>
+              <SelectItem value="50000">Under ₦50,000</SelectItem>
+              <SelectItem value="100000">Under ₦100,000</SelectItem>
+              <SelectItem value="200000">Under ₦200,000</SelectItem>
+              <SelectItem value="500000">Under ₦500,000</SelectItem>
+            </SelectContent>
+          </Select>
+          {/* Search Button */}
+          <Button onClick={handleSearch} className="gradient-accent text-accent-foreground h-12 font-semibold text-base">
+            <Search className="mr-2 h-5 w-5" /> Find Properties
           </Button>
         </div>
       </div>

@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { LogOut, LayoutDashboard, Building2, User, Handshake, Home, MessageCircle, Menu } from "lucide-react";
+import { LogOut, LayoutDashboard, Building2, User, Handshake, Home, MessageCircle, Menu, Phone } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useIsMobile } from "@/hooks/use-mobile";
 import mycribLogo from "@/assets/mycrib-logo.png";
@@ -80,6 +80,22 @@ export function Navbar() {
           <span className="font-display text-xl font-bold text-foreground">MyCrib.ng</span>
         </Link>
 
+        {/* Support contact — Hotels.ng style */}
+        <a
+          href="https://wa.me/2348000000000"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden md:flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-success/10">
+            <Phone className="h-4 w-4 text-success" />
+          </div>
+          <div className="leading-tight">
+            <div className="text-[10px] text-muted-foreground">Call/WhatsApp us</div>
+            <div className="font-semibold text-foreground text-xs">+234 800 000 0000</div>
+          </div>
+        </a>
+
         {isMobile ? (
           <div className="flex items-center gap-1">
             {user && <NotificationBell />}
@@ -90,6 +106,16 @@ export function Navbar() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64 pt-12">
+                {/* Mobile support contact */}
+                <a
+                  href="https://wa.me/2348000000000"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 mb-4 p-2 rounded-lg bg-success/10 text-sm"
+                >
+                  <Phone className="h-4 w-4 text-success" />
+                  <span className="font-semibold text-foreground">+234 800 000 0000</span>
+                </a>
                 <nav className="flex flex-col gap-1">
                   <NavItems />
                 </nav>
