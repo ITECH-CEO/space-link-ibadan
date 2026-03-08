@@ -63,19 +63,31 @@ export function PropertiesTab() {
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between">
+      <CardHeader className="flex-row items-center justify-between flex-wrap gap-2">
         <CardTitle>Properties</CardTitle>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gradient-primary text-primary-foreground">
-              <Plus className="mr-2 h-4 w-4" />Add Property
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-            <DialogHeader><DialogTitle>Add New Property</DialogTitle></DialogHeader>
-            <PropertyForm onSuccess={() => { setDialogOpen(false); fetchProperties(); }} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          {selected.size > 0 && (
+            <>
+              <Button size="sm" variant="outline" className="text-success border-success/30" onClick={() => bulkUpdateStatus("approved")}>
+                <CheckCircle className="mr-1 h-4 w-4" />Approve ({selected.size})
+              </Button>
+              <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => bulkUpdateStatus("rejected")}>
+                <XCircle className="mr-1 h-4 w-4" />Reject ({selected.size})
+              </Button>
+            </>
+          )}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gradient-primary text-primary-foreground">
+                <Plus className="mr-2 h-4 w-4" />Add Property
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+              <DialogHeader><DialogTitle>Add New Property</DialogTitle></DialogHeader>
+              <PropertyForm onSuccess={() => { setDialogOpen(false); fetchProperties(); }} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -87,6 +99,12 @@ export function PropertiesTab() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={selected.size === properties.length && properties.length > 0}
+                      onCheckedChange={toggleAll}
+                    />
+                  </TableHead>
                   <TableHead>Property</TableHead>
                   <TableHead>Landlord</TableHead>
                   <TableHead>Type</TableHead>
