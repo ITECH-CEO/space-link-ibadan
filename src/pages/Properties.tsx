@@ -18,8 +18,6 @@ import { PropertyMap } from "@/components/PropertyMap";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
-  latitude?: number | null;
-  longitude?: number | null;
 }
 
 export default function Properties() {
