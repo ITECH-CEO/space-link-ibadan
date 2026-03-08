@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Users, Handshake, DollarSign, TrendingUp, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { motion } from "framer-motion";
 
 interface KPI {
   label: string;
@@ -22,13 +23,23 @@ interface ActivityItem {
   status?: string;
 }
 
+const stagger = {
+  container: { hidden: {}, show: { transition: { staggerChildren: 0.07 } } },
+  item: { hidden: { opacity: 0, y: 16, scale: 0.96 }, show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.35, ease: "easeOut" } } },
+};
+
+const feedStagger = {
+  container: { hidden: {}, show: { transition: { staggerChildren: 0.04, delayChildren: 0.2 } } },
+  item: { hidden: { opacity: 0, x: -12 }, show: { opacity: 1, x: 0, transition: { duration: 0.25 } } },
+};
+
 export function OverviewTab() {
   const [kpis, setKpis] = useState<KPI[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       const [
         { data: properties },
         { data: clients },
@@ -65,7 +76,6 @@ export function OverviewTab() {
         { label: "Inspections", value: insp.length, icon: Clock, color: "text-primary", trend: `${insp.filter(i => i.status === "confirmed").length} confirmed` },
       ]);
 
-      // Build activity feed from recent events across tables
       const items: ActivityItem[] = [];
       props.slice(0, 8).forEach(p => items.push({
         id: p.id, type: "property", title: `Property: ${p.property_name}`,
@@ -86,15 +96,14 @@ export function OverviewTab() {
       setActivity(items.slice(0, 15));
       setLoading(false);
     };
-    fetch();
+    fetchData();
 
-    // Realtime subscription for live updates
     const channel = supabase
       .channel("dashboard-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "properties" }, () => fetch())
-      .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, () => fetch())
-      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, () => fetch())
-      .on("postgres_changes", { event: "*", schema: "public", table: "commissions" }, () => fetch())
+      .on("postgres_changes", { event: "*", schema: "public", table: "properties" }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "commissions" }, () => fetchData())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -110,35 +119,63 @@ export function OverviewTab() {
     return "bg-muted text-muted-foreground border-border";
   };
 
-  if (loading) return <p className="text-muted-foreground">Loading overview...</p>;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="card-elevated animate-pulse">
+              <CardContent className="pt-5 pb-4">
+                <div className="h-9 w-9 rounded-lg bg-muted mb-3" />
+                <div className="h-6 w-16 bg-muted rounded mb-1" />
+                <div className="h-3 w-20 bg-muted rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-        {kpis.map((k, i) => (
-          <Card key={k.label} className="card-elevated relative overflow-hidden group hover:glow-primary transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardContent className="pt-5 pb-4 relative">
-              <div className="flex items-center justify-between mb-3">
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <k.icon className={`h-4.5 w-4.5 ${k.color}`} />
+      {/* KPI Cards with stagger animation */}
+      <motion.div
+        className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6"
+        variants={stagger.container}
+        initial="hidden"
+        animate="show"
+      >
+        {kpis.map((k) => (
+          <motion.div key={k.label} variants={stagger.item}>
+            <Card className="card-elevated relative overflow-hidden group hover:glow-primary transition-all duration-300 h-full">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <CardContent className="pt-5 pb-4 relative">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <k.icon className={`h-4 w-4 ${k.color}`} />
+                  </div>
+                  {k.trend && (
+                    <span className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-full">{k.trend}</span>
+                  )}
                 </div>
-                {k.trend && (
-                  <span className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-full">{k.trend}</span>
-                )}
-              </div>
-              <p className="text-2xl font-bold tracking-tight font-display">{k.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{k.label}</p>
-            </CardContent>
-          </Card>
+                <p className="text-2xl font-bold tracking-tight font-display">{k.value}</p>
+                <p className="text-xs text-muted-foreground mt-1">{k.label}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Pending Actions + Activity Feed */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <motion.div
+        className="grid gap-6 lg:grid-cols-2"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.4 }}
+      >
         {/* Pending Actions */}
-        <Card>
+        <Card className="card-elevated">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-warning" />
@@ -152,11 +189,11 @@ export function OverviewTab() {
                 <span className="text-sm">All caught up!</span>
               </div>
             ) : (
-              <div className="space-y-2 max-h-[320px] overflow-y-auto">
+              <motion.div className="space-y-2 max-h-[320px] overflow-y-auto" variants={feedStagger.container} initial="hidden" animate="show">
                 {activity.filter(a => a.status === "pending").map((item) => {
                   const Icon = typeIcons[item.type] || Clock;
                   return (
-                    <div key={item.id} className="flex items-center gap-3 p-2.5 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                    <motion.div key={item.id} variants={feedStagger.item} className="flex items-center gap-3 p-2.5 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
                       <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{item.title}</p>
@@ -165,16 +202,16 @@ export function OverviewTab() {
                       <Badge variant="outline" className={`text-[10px] shrink-0 ${statusColor(item.status)}`}>
                         {item.status}
                       </Badge>
-                    </div>
+                    </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
             )}
           </CardContent>
         </Card>
 
         {/* Activity Feed */}
-        <Card>
+        <Card className="card-elevated">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Clock className="h-4 w-4 text-primary" />
@@ -182,11 +219,11 @@ export function OverviewTab() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-1 max-h-[320px] overflow-y-auto">
+            <motion.div className="space-y-1 max-h-[320px] overflow-y-auto" variants={feedStagger.container} initial="hidden" animate="show">
               {activity.map((item) => {
                 const Icon = typeIcons[item.type] || Clock;
                 return (
-                  <div key={item.id + item.type} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/30 transition-colors">
+                  <motion.div key={item.id + item.type} variants={feedStagger.item} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/30 transition-colors">
                     <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
                       <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
@@ -199,13 +236,13 @@ export function OverviewTab() {
                     <Badge variant="outline" className={`text-[10px] shrink-0 ${statusColor(item.status)}`}>
                       {item.status}
                     </Badge>
-                  </div>
+                  </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </div>
   );
 }
