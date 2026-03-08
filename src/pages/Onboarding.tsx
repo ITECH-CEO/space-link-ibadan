@@ -150,7 +150,7 @@ export default function Onboarding() {
             ))}
           </div>
 
-          <Card className="card-elevated border-border/50 overflow-hidden">
+          <Card className="card-elevated border-border/50 overflow-hidden" data-tour="onboarding-form">
             <CardContent className="pt-6 pb-8">
               <AnimatePresence mode="wait" custom={direction}>
                 <motion.div
