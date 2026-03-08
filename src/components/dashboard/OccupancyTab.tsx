@@ -80,12 +80,10 @@ export function OccupancyTab() {
     if (editStatus === "vacant") {
       const occ = occupancies.find(o => o.id === id);
       if (occ) {
-        await supabase.rpc("increment_available_rooms" as any, { _property_id: occ.property_id }).catch(() => {
-          // Fallback: direct update
-          supabase.from("properties").select("available_rooms").eq("id", occ.property_id).single().then(({ data }) => {
-            if (data) supabase.from("properties").update({ available_rooms: (data.available_rooms || 0) + 1 }).eq("id", occ.property_id);
-          });
-        });
+        const { data: propData } = await supabase.from("properties").select("available_rooms").eq("id", occ.property_id).single();
+        if (propData) {
+          await supabase.from("properties").update({ available_rooms: (propData.available_rooms || 0) + 1 }).eq("id", occ.property_id);
+        }
       }
     }
 
