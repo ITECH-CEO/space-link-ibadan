@@ -544,7 +544,7 @@ export default function PropertyDetail() {
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold">{rt.name}</h3>
                       <span className="flex items-center gap-1 text-lg font-bold text-primary">
-                        <DollarSign className="h-4 w-4" />₦{rt.price.toLocaleString()}
+                        ₦{rt.price.toLocaleString()}
                       </span>
                     </div>
                     {rt.description && <p className="text-sm text-muted-foreground mb-2">{rt.description}</p>}

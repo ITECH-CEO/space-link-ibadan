@@ -102,7 +102,7 @@ export function FeesTab() {
                 <div className="flex-1">
                   <Label className="text-xs text-muted-foreground">Amount (₦)</Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <span className="absolute left-2 top-2.5 text-sm font-bold text-muted-foreground">₦</span>
                     <Input
                       type="number"
                       value={editAmounts[fee.id] || ""}

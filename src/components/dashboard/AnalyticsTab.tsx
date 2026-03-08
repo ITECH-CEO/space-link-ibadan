@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from "recharts";
-import { Building2, Users, Handshake, DollarSign, TrendingUp, CheckCircle } from "lucide-react";
+import { Building2, Users, Handshake, Banknote, TrendingUp, CheckCircle } from "lucide-react";
 
 interface Stats {
   totalProperties: number;
