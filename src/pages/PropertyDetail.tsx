@@ -41,6 +41,7 @@ interface BookingInfo {
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, userRole } = useAuth();
   const [property, setProperty] = useState<PropertyWithRooms | null>(null);
   const [loading, setLoading] = useState(true);
