@@ -92,7 +92,7 @@ export function Navbar() {
           </div>
           <div className="leading-tight">
             <div className="text-[10px] text-muted-foreground">Call/WhatsApp us</div>
-            <div className="font-semibold text-foreground text-xs">+234 800 000 0000</div>
+            <div className="font-semibold text-foreground text-xs">+234 913 742 5552</div>
           </div>
         </a>
 
