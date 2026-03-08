@@ -42,6 +42,11 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
     available_rooms: "",
     facilities: [] as string[],
     special_notes: "",
+    distance_to_campus_km: "",
+    walkability_rating: "",
+    power_rating: "",
+    water_rating: "",
+    transport_options: [{ mode: "", duration: "", cost_estimate: "" }] as { mode: string; duration: string; cost_estimate: string }[],
   });
 
   const [roomTypes, setRoomTypes] = useState<RoomTypeInput[]>([emptyRoomType()]);
