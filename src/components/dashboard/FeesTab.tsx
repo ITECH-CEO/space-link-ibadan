@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Save, DollarSign } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 
 interface PlatformFee {
   id: string;
