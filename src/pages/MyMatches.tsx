@@ -12,6 +12,7 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { toast } from "sonner";
 import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, MessageSquare, LayoutGrid } from "lucide-react";
 import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
+import { motion } from "framer-motion";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
@@ -24,6 +25,9 @@ interface RoommateMatchDetail {
   ai_reasoning: string | null; partner_name: string; property_name: string | null;
   partner_user_id?: string;
 }
+
+const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
+const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
 export default function MyMatches() {
   const { user, loading: authLoading } = useAuth();
@@ -45,7 +49,6 @@ export default function MyMatches() {
       setClientId(client.id);
       setSeekingRoommate(client.seeking_roommate || false);
 
-      // Property matches
       const { data: propData } = await supabase
         .from("matches")
         .select("id, status, compatibility_score, created_at, property_id, properties(property_name, address), room_types(name, price)")
@@ -59,7 +62,6 @@ export default function MyMatches() {
         room_type_price: m.room_types?.price || null,
       })));
 
-      // Roommate matches
       const { data: rmData } = await (supabase as any)
         .from("roommate_matches")
         .select("id, status, compatibility_score, ai_reasoning, client_a_id, client_b_id, properties(property_name)")
@@ -128,10 +130,10 @@ export default function MyMatches() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container max-w-3xl py-8">
-        <div className="mb-6">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <h1 className="font-display text-3xl font-bold">My Matches</h1>
           <p className="text-muted-foreground">Properties and roommates matched to your profile</p>
-        </div>
+        </motion.div>
 
         {loading ? (
           <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}</div>
@@ -144,53 +146,55 @@ export default function MyMatches() {
 
             <TabsContent value="properties">
               {matches.length === 0 ? (
-                <Card>
+                <Card className="card-elevated border-border/50">
                   <CardContent className="py-12 text-center">
-                    <Handshake className="mx-auto h-16 w-16 text-muted-foreground/30 mb-4" />
+                    <Handshake className="mx-auto h-16 w-16 text-muted-foreground/20 mb-4" />
                     <h2 className="text-lg font-semibold mb-2">No Property Matches Yet</h2>
                     <p className="text-muted-foreground mb-4">Complete your profile with budget and preferences.</p>
                     <Link to="/profile" className="text-primary underline">Complete your profile →</Link>
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-4">
+                <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-4">
                   {matches.map((m) => (
-                    <Card key={m.id} className="transition-shadow hover:shadow-lg">
-                      <CardContent className="p-5">
-                        <Link to={`/property/${m.property_id}`}>
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Building2 className="h-4 w-4 text-primary" />
-                                <h3 className="font-semibold">{m.property_name}</h3>
+                    <motion.div key={m.id} variants={fadeUp}>
+                      <Card className="transition-all hover:shadow-lg hover:glow-primary card-elevated border-border/50">
+                        <CardContent className="p-5">
+                          <Link to={`/property/${m.property_id}`}>
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Building2 className="h-4 w-4 text-primary" />
+                                  <h3 className="font-semibold">{m.property_name}</h3>
+                                </div>
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+                                  <MapPin className="h-3 w-3" /> {m.property_address}
+                                </div>
+                                <div className="flex items-center gap-3 text-sm">
+                                  {m.room_type_name && <Badge variant="secondary" className="text-xs">{m.room_type_name}</Badge>}
+                                  {m.room_type_price && (
+                                    <span className="flex items-center gap-1 font-medium text-primary">
+                                      <DollarSign className="h-3 w-3" />₦{m.room_type_price.toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-                                <MapPin className="h-3 w-3" /> {m.property_address}
-                              </div>
-                              <div className="flex items-center gap-3 text-sm">
-                                {m.room_type_name && <Badge variant="secondary" className="text-xs">{m.room_type_name}</Badge>}
-                                {m.room_type_price && (
-                                  <span className="flex items-center gap-1 font-medium text-primary">
-                                    <DollarSign className="h-3 w-3" />₦{m.room_type_price.toLocaleString()}
-                                  </span>
-                                )}
+                              <div className="flex flex-col items-end gap-2">
+                                <div className={`text-lg font-bold ${scoreClass(m.compatibility_score)}`}>{m.compatibility_score ?? 0}%</div>
+                                <Badge variant="outline" className={statusColors[m.status] || ""}>{m.status}</Badge>
                               </div>
                             </div>
-                            <div className="flex flex-col items-end gap-2">
-                              <div className={`text-lg font-bold ${scoreClass(m.compatibility_score)}`}>{m.compatibility_score ?? 0}%</div>
-                              <Badge variant="outline" className={statusColors[m.status] || ""}>{m.status}</Badge>
-                            </div>
-                          </div>
-                        </Link>
-                      </CardContent>
-                    </Card>
+                          </Link>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   ))}
-                </div>
+                </motion.div>
               )}
             </TabsContent>
 
             <TabsContent value="roommates">
-              <Card className="mb-4 border-primary/20">
+              <Card className="mb-4 border-primary/20 card-elevated">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -218,9 +222,9 @@ export default function MyMatches() {
               </Card>
 
               {roommateMatches.length === 0 ? (
-                <Card>
+                <Card className="card-elevated border-border/50">
                   <CardContent className="py-12 text-center">
-                    <Users className="mx-auto h-16 w-16 text-muted-foreground/30 mb-4" />
+                    <Users className="mx-auto h-16 w-16 text-muted-foreground/20 mb-4" />
                     <h2 className="text-lg font-semibold mb-2">No Roommate Matches Yet</h2>
                     <p className="text-muted-foreground">Click "Find Roommate" above and make sure your profile has your course and faculty info.</p>
                   </CardContent>
@@ -234,54 +238,51 @@ export default function MyMatches() {
               ) : (
                 <>
                   <div className="flex justify-end mb-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSwipeView(true)}
-                      className="text-sm"
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setSwipeView(true)} className="text-sm">
                       <LayoutGrid className="mr-2 h-4 w-4" /> Swipe View
                     </Button>
                   </div>
-                  <div className="space-y-4">
+                  <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-4">
                     {roommateMatches.map((r) => (
-                      <Card key={r.id} className="transition-shadow hover:shadow-md">
-                        <CardContent className="p-5">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Users className="h-4 w-4 text-primary" />
-                                <h3 className="font-semibold">{r.partner_name}</h3>
+                      <motion.div key={r.id} variants={fadeUp}>
+                        <Card className="transition-all hover:shadow-md card-elevated border-border/50">
+                          <CardContent className="p-5">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Users className="h-4 w-4 text-primary" />
+                                  <h3 className="font-semibold">{r.partner_name}</h3>
+                                </div>
+                                {r.property_name && (
+                                  <p className="text-sm text-muted-foreground mb-1">
+                                    <Building2 className="inline h-3 w-3 mr-1" />Shared interest: {r.property_name}
+                                  </p>
+                                )}
+                                {r.ai_reasoning && (
+                                  <p className="text-xs text-muted-foreground mt-2 italic">"{r.ai_reasoning}"</p>
+                                )}
                               </div>
-                              {r.property_name && (
-                                <p className="text-sm text-muted-foreground mb-1">
-                                  <Building2 className="inline h-3 w-3 mr-1" />Shared interest: {r.property_name}
-                                </p>
-                              )}
-                              {r.ai_reasoning && (
-                                <p className="text-xs text-muted-foreground mt-2 italic">"{r.ai_reasoning}"</p>
-                              )}
+                              <div className="flex flex-col items-end gap-2">
+                                <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
+                                <Badge variant="outline" className={statusColors[r.status] || ""}>{r.status}</Badge>
+                              </div>
                             </div>
-                            <div className="flex flex-col items-end gap-2">
-                              <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
-                              <Badge variant="outline" className={statusColors[r.status] || ""}>{r.status}</Badge>
-                            </div>
-                          </div>
-                          
-                          {r.partner_user_id && (
-                            <Button
-                              onClick={() => messageRoommate(r.partner_user_id!)}
-                              variant="outline"
-                              size="sm"
-                              className="mt-3 w-full"
-                            >
-                              <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
+                            
+                            {r.partner_user_id && (
+                              <Button
+                                onClick={() => messageRoommate(r.partner_user_id!)}
+                                variant="outline"
+                                size="sm"
+                                className="mt-3 w-full"
+                              >
+                                <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
+                              </Button>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
                     ))}
-                  </div>
+                  </motion.div>
                 </>
               )}
             </TabsContent>

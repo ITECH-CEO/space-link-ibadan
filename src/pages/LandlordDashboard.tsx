@@ -8,6 +8,7 @@ import { LandlordPaymentsTab } from "@/components/landlord/LandlordPaymentsTab";
 import { LandlordMaintenanceTab } from "@/components/landlord/LandlordMaintenanceTab";
 import { LandlordInspectionsTab } from "@/components/landlord/LandlordInspectionsTab";
 import { Building2, DollarSign, Wrench, CalendarDays } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function LandlordDashboard() {
   const { user, userRole, loading } = useAuth();
@@ -19,7 +20,11 @@ export default function LandlordDashboard() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container py-8">
-        <div className="mb-6 flex items-center gap-3">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 flex items-center gap-3"
+        >
           <div>
             <h1 className="font-display text-3xl font-bold">Landlord Dashboard</h1>
             <p className="text-muted-foreground">Monitor your properties and manage tenants</p>
@@ -27,19 +32,25 @@ export default function LandlordDashboard() {
           <Badge variant="outline" className="ml-auto bg-primary/10 text-primary border-primary/20 capitalize">
             Landlord
           </Badge>
-        </div>
-        <Tabs defaultValue="occupancy">
-          <TabsList className="mb-6 flex-wrap">
-            <TabsTrigger value="occupancy"><Building2 className="mr-2 h-4 w-4" />Occupancy</TabsTrigger>
-            <TabsTrigger value="inspections"><CalendarDays className="mr-2 h-4 w-4" />Inspections</TabsTrigger>
-            <TabsTrigger value="payments"><DollarSign className="mr-2 h-4 w-4" />Payments</TabsTrigger>
-            <TabsTrigger value="maintenance"><Wrench className="mr-2 h-4 w-4" />Maintenance</TabsTrigger>
-          </TabsList>
-          <TabsContent value="occupancy"><LandlordOccupancyTab /></TabsContent>
-          <TabsContent value="inspections"><LandlordInspectionsTab /></TabsContent>
-          <TabsContent value="payments"><LandlordPaymentsTab /></TabsContent>
-          <TabsContent value="maintenance"><LandlordMaintenanceTab /></TabsContent>
-        </Tabs>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Tabs defaultValue="occupancy">
+            <TabsList className="mb-6 flex-wrap">
+              <TabsTrigger value="occupancy"><Building2 className="mr-2 h-4 w-4" />Occupancy</TabsTrigger>
+              <TabsTrigger value="inspections"><CalendarDays className="mr-2 h-4 w-4" />Inspections</TabsTrigger>
+              <TabsTrigger value="payments"><DollarSign className="mr-2 h-4 w-4" />Payments</TabsTrigger>
+              <TabsTrigger value="maintenance"><Wrench className="mr-2 h-4 w-4" />Maintenance</TabsTrigger>
+            </TabsList>
+            <TabsContent value="occupancy"><LandlordOccupancyTab /></TabsContent>
+            <TabsContent value="inspections"><LandlordInspectionsTab /></TabsContent>
+            <TabsContent value="payments"><LandlordPaymentsTab /></TabsContent>
+            <TabsContent value="maintenance"><LandlordMaintenanceTab /></TabsContent>
+          </Tabs>
+        </motion.div>
       </main>
     </div>
   );
