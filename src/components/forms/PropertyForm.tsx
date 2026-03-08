@@ -262,6 +262,7 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
           <div className="space-y-2">
             <Label>Available Rooms</Label>
             <Input type="number" value={form.available_rooms} onChange={(e) => setForm({ ...form, available_rooms: e.target.value })} />
+          </div>
         </div>
       </div>
 
