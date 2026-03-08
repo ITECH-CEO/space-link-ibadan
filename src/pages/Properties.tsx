@@ -317,7 +317,7 @@ export default function Properties() {
             {savedIds.size > 0 && (
               <TabsContent value="saved">
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {filtered.filter((p) => savedIds.has(p.id)).map((p) => <PropertyCard key={p.id} p={p} />)}
+                  {filtered.filter((p) => savedIds.has(p.id)).map((p, i) => <PropertyCard key={p.id} p={p} index={i} />)}
                 </div>
                 {filtered.filter((p) => savedIds.has(p.id)).length === 0 && (
                   <div className="text-center py-12">
