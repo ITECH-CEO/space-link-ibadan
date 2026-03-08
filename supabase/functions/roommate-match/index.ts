@@ -166,7 +166,7 @@ serve(async (req) => {
     // Fetch clients seeking roommates (or all approved if admin)
     let clientQuery = supabase
       .from("clients")
-      .select("id, full_name, budget_min, budget_max, preferences, verification_status, course, faculty, level")
+      .select("id, full_name, budget_min, budget_max, preferences, verification_status, course, faculty, level, gender")
       .eq("seeking_roommate", true);
 
     const { data: allClients } = await clientQuery;
