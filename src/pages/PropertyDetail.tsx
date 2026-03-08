@@ -562,9 +562,11 @@ export default function PropertyDetail() {
                 </Card>
               ))}
             </div>
-          </div>
-        )}
+        {/* Reviews Section */}
+        <PropertyReviews propertyId={id!} />
       </main>
     </div>
+  );
+}
   );
 }
