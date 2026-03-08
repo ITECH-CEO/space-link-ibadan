@@ -637,6 +637,54 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_complaints: {
+        Row: {
+          admin_notes: string | null
+          category: string
+          client_email: string | null
+          client_name: string
+          client_phone: string | null
+          created_at: string
+          description: string
+          id: string
+          priority: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          category?: string
+          client_email?: string | null
+          client_name: string
+          client_phone?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          priority?: string
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string
+          client_email?: string | null
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          priority?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_fees: {
         Row: {
           amount: number
