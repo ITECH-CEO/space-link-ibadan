@@ -499,6 +499,35 @@ export type Database = {
           },
         ]
       }
+      match_admin_notes: {
+        Row: {
+          created_at: string | null
+          match_id: string
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          match_id: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          match_id?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_admin_notes_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: true
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           admin_notes: string | null
@@ -905,6 +934,35 @@ export type Database = {
           walkability_rating?: number | null
         }
         Relationships: []
+      }
+      property_admin_notes: {
+        Row: {
+          created_at: string | null
+          notes: string | null
+          property_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          notes?: string | null
+          property_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          notes?: string | null
+          property_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_admin_notes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       property_reviews: {
         Row: {
