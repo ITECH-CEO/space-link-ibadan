@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Building2, Users, Shield, Handshake, ArrowRight, MapPin, Star, Phone } from "lucide-react";
@@ -46,58 +47,32 @@ export default function Index() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hotels.ng-style Hero with full-width background image */}
+      {/* Hero */}
       <section className="relative overflow-hidden min-h-[520px] flex items-center justify-center">
-        {/* Background image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/images/hero-campus.jpg')" }}
-        />
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/images/hero-campus.jpg')" }} />
         <div className="absolute inset-0 bg-foreground/50" />
-
         <div className="container relative z-10 py-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mx-auto max-w-3xl text-center"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="mx-auto max-w-3xl text-center">
             <img src={mycribLogo} alt="MyCrib.ng" className="mx-auto mb-4 h-16 w-16 rounded-2xl object-contain shadow-lg" />
             <h1 className="mb-3 font-display text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl">
               Find Your Perfect <span className="text-accent">Crib</span> in Nigeria.
             </h1>
-            <p className="mb-2 text-lg text-white/80 md:text-xl">
-              Search through verified hostels, apartments, and shared rooms near your campus.
-            </p>
+            <p className="mb-2 text-lg text-white/80 md:text-xl">Search through verified hostels, apartments, and shared rooms near your campus.</p>
           </motion.div>
-
-          {/* Floating Search Bar */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}>
             <HeroSearch />
           </motion.div>
         </div>
       </section>
 
-      {/* Suggested Destinations — Hotels.ng style */}
       <CampusCards />
 
-      {/* Stats Bar */}
+      {/* Stats */}
       <section className="border-y bg-card py-10">
         <div className="container">
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
             {displayStats.map((s, i) => (
-              <motion.div
-                key={s.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                viewport={{ once: true }}
-                className="text-center"
-              >
+              <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} viewport={{ once: true }} className="text-center">
                 <div className="font-display text-3xl font-bold text-primary md:text-4xl">{s.value}</div>
                 <div className="text-sm text-muted-foreground">{s.label}</div>
               </motion.div>
@@ -106,7 +81,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Featured Properties — "Today's Top Deals" equivalent */}
       <FeaturedProperties />
 
       {/* How it Works */}
@@ -118,13 +92,7 @@ export default function Index() {
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {features.map((f, i) => (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                viewport={{ once: true }}
-              >
+              <motion.div key={f.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} viewport={{ once: true }}>
                 <Card className="h-full border-0 bg-muted/50 transition-shadow hover:shadow-lg relative overflow-hidden">
                   <div className="absolute top-3 right-3 font-display text-4xl font-bold text-primary/10">{f.step}</div>
                   <CardContent className="pt-6">
@@ -141,7 +109,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Success Stories */}
       <SuccessStories />
 
       {/* CTA */}
@@ -164,26 +131,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t bg-card py-8">
-        <div className="container flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <img src={mycribLogo} alt="MyCrib.ng" className="h-8 w-8 rounded-lg object-contain" />
-            <span className="font-display font-bold">MyCrib.ng</span>
-          </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <a href="tel:+2349137425552" className="flex items-center gap-1 hover:text-foreground transition-colors">
-              <Phone className="h-3.5 w-3.5" /> +234 913 742 5552
-            </a>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} MyCrib.ng — Verified. Secure. Connected.
-          </p>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" /> Nigeria
-          </div>
-        </div>
-      </footer>
+      <Footer />
       <WhatsAppButton />
     </div>
   );

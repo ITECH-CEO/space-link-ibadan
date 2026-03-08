@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Building2, MapPin, Users, Search, DollarSign, SlidersHorizontal, X, Heart, Map, List, Footprints, Navigation, Star } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -46,7 +48,6 @@ export default function Properties() {
         setLoading(false);
       });
 
-    // Load saved properties
     if (user) {
       (supabase as any)
         .from("saved_properties")
@@ -118,7 +119,6 @@ export default function Properties() {
       >
         <Link key={p.id} to={`/property/${p.id}`}>
           <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:glow-primary cursor-pointer h-full card-elevated group">
-            {/* Photo carousel */}
             <div className="relative">
               <PropertyCarousel photos={p.photos || []} alt={p.property_name} />
               <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
@@ -171,9 +171,12 @@ export default function Properties() {
               </div>
               {p.facilities && p.facilities.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
-                  {p.facilities.map((f) => (
+                  {p.facilities.slice(0, 4).map((f) => (
                     <Badge key={f} variant="secondary" className="text-xs">{f}</Badge>
                   ))}
+                  {p.facilities.length > 4 && (
+                    <Badge variant="secondary" className="text-xs">+{p.facilities.length - 4}</Badge>
+                  )}
                 </div>
               )}
               {p.room_types && p.room_types.length > 0 && (
@@ -195,10 +198,25 @@ export default function Properties() {
     );
   };
 
+  // Loading skeletons
+  const PropertySkeleton = () => (
+    <Card className="overflow-hidden">
+      <Skeleton className="h-48 w-full" />
+      <CardContent className="pt-4 space-y-3">
+        <Skeleton className="h-5 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+        <div className="flex gap-2">
+          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-16 rounded-full" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      <main className="container py-8">
+      <main className="container py-8 flex-1">
         <div className="mb-8">
           <h1 className="font-display text-3xl font-bold">Browse Properties</h1>
           <p className="text-muted-foreground">Verified accommodations near you</p>
@@ -281,14 +299,16 @@ export default function Properties() {
         )}
 
         <p className="mb-4 text-sm text-muted-foreground">
-          {filtered.length} {filtered.length === 1 ? "property" : "properties"} found
+          {loading ? "Loading..." : `${filtered.length} ${filtered.length === 1 ? "property" : "properties"} found`}
           {savedIds.size > 0 && (
             <span className="ml-2">· <Heart className="inline h-3 w-3 fill-destructive text-destructive" /> {savedIds.size} saved</span>
           )}
         </p>
 
         {loading ? (
-          <p className="text-muted-foreground">Loading properties...</p>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => <PropertySkeleton key={i} />)}
+          </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">
             <Building2 className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
@@ -330,6 +350,7 @@ export default function Properties() {
           </Tabs>
         )}
       </main>
+      <Footer />
     </div>
   );
 }
