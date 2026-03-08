@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, Link } from "react-router-dom";
+import { Navigate, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
@@ -10,27 +10,31 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { toast } from "sonner";
-import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2 } from "lucide-react";
+import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, CreditCard, MessageSquare } from "lucide-react";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
   property_name: string; property_address: string; property_id: string;
   room_type_name: string | null; room_type_price: number | null;
+  commission_id?: string; commission_status?: string;
 }
 
 interface RoommateMatchDetail {
   id: string; status: string; compatibility_score: number | null;
   ai_reasoning: string | null; partner_name: string; property_name: string | null;
+  partner_user_id?: string;
 }
 
 export default function MyMatches() {
   const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [matches, setMatches] = useState<MatchWithDetails[]>([]);
   const [roommateMatches, setRoommateMatches] = useState<RoommateMatchDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
   const [seekingRoommate, setSeekingRoommate] = useState(false);
+  const [payingMatchId, setPayingMatchId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -48,14 +52,26 @@ export default function MyMatches() {
         .eq("client_id", client.id)
         .order("compatibility_score", { ascending: false });
 
-      setMatches((propData || []).map((m: any) => ({
-        id: m.id, status: m.status, compatibility_score: m.compatibility_score, created_at: m.created_at,
-        property_name: m.properties?.property_name || "—", property_address: m.properties?.address || "",
-        property_id: m.property_id, room_type_name: m.room_types?.name || null,
-        room_type_price: m.room_types?.price || null,
-      })));
+      // Get commissions for this client's matches
+      const { data: commissions } = await supabase
+        .from("commissions")
+        .select("id, match_id, status")
+        .eq("client_id", client.id);
 
-      // Roommate matches
+      const commissionMap = new Map((commissions || []).map(c => [c.match_id, c]));
+
+      setMatches((propData || []).map((m: any) => {
+        const comm = commissionMap.get(m.id);
+        return {
+          id: m.id, status: m.status, compatibility_score: m.compatibility_score, created_at: m.created_at,
+          property_name: m.properties?.property_name || "—", property_address: m.properties?.address || "",
+          property_id: m.property_id, room_type_name: m.room_types?.name || null,
+          room_type_price: m.room_types?.price || null,
+          commission_id: comm?.id, commission_status: comm?.status,
+        };
+      }));
+
+      // Roommate matches - also get partner user_id for messaging
       const { data: rmData } = await (supabase as any)
         .from("roommate_matches")
         .select("id, status, compatibility_score, ai_reasoning, client_a_id, client_b_id, properties(property_name)")
@@ -64,15 +80,17 @@ export default function MyMatches() {
 
       if (rmData && rmData.length > 0) {
         const partnerIds = rmData.map((r: any) => r.client_a_id === client.id ? r.client_b_id : r.client_a_id);
-        const { data: partners } = await supabase.from("clients").select("id, full_name").in("id", partnerIds);
-        const pMap = new Map((partners || []).map(p => [p.id, p.full_name]));
+        const { data: partners } = await supabase.from("clients").select("id, full_name, user_id").in("id", partnerIds);
+        const pMap = new Map((partners || []).map(p => [p.id, { name: p.full_name, user_id: p.user_id }]));
 
         setRoommateMatches(rmData.map((r: any) => {
           const partnerId = r.client_a_id === client.id ? r.client_b_id : r.client_a_id;
+          const partner = pMap.get(partnerId);
           return {
             id: r.id, status: r.status, compatibility_score: r.compatibility_score,
-            ai_reasoning: r.ai_reasoning, partner_name: pMap.get(partnerId) || "—",
+            ai_reasoning: r.ai_reasoning, partner_name: partner?.name || "—",
             property_name: r.properties?.property_name || null,
+            partner_user_id: partner?.user_id,
           };
         }));
       }
@@ -88,17 +106,14 @@ export default function MyMatches() {
     if (!clientId) { toast.error("Complete your profile first"); return; }
     setRequesting(true);
     try {
-      // Enable seeking_roommate flag
       await (supabase as any).from("clients").update({ seeking_roommate: true }).eq("id", clientId);
       setSeekingRoommate(true);
-
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { toast.error("Not authenticated"); return; }
       const res = await supabase.functions.invoke("roommate-match", { body: { client_id: clientId } });
       if (res.error) toast.error(res.error.message || "Matching failed");
       else {
-        toast.success(res.data?.message || "Roommate match request submitted! Check back soon.");
-        // Refresh
+        toast.success(res.data?.message || "Roommate match request submitted!");
         window.location.reload();
       }
     } catch (err: any) {
@@ -106,6 +121,32 @@ export default function MyMatches() {
     } finally {
       setRequesting(false);
     }
+  };
+
+  const handlePayNow = async (matchId: string) => {
+    setPayingMatchId(matchId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("Not authenticated"); return; }
+
+      const res = await supabase.functions.invoke("paystack-initialize", {
+        body: { match_id: matchId, callback_url: window.location.href },
+      });
+
+      if (res.error) {
+        toast.error(res.error.message || "Payment initialization failed");
+      } else if (res.data?.authorization_url) {
+        window.location.href = res.data.authorization_url;
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Payment failed");
+    } finally {
+      setPayingMatchId(null);
+    }
+  };
+
+  const messageRoommate = (partnerUserId: string) => {
+    navigate(`/messages?to=${partnerUserId}`);
   };
 
   const statusColors: Record<string, string> = {
@@ -148,9 +189,9 @@ export default function MyMatches() {
               ) : (
                 <div className="space-y-4">
                   {matches.map((m) => (
-                    <Link key={m.id} to={`/property/${m.property_id}`}>
-                      <Card className="transition-shadow hover:shadow-lg cursor-pointer">
-                        <CardContent className="p-5">
+                    <Card key={m.id} className="transition-shadow hover:shadow-lg">
+                      <CardContent className="p-5">
+                        <Link to={`/property/${m.property_id}`}>
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
@@ -174,16 +215,30 @@ export default function MyMatches() {
                               <Badge variant="outline" className={statusColors[m.status] || ""}>{m.status}</Badge>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
+                        </Link>
+                        {/* Pay Now button for accepted matches */}
+                        {m.status === "accepted" && m.commission_status === "pending" && (
+                          <Button
+                            onClick={(e) => { e.preventDefault(); handlePayNow(m.id); }}
+                            disabled={payingMatchId === m.id}
+                            className="mt-3 w-full gradient-accent text-accent-foreground font-semibold"
+                            size="sm"
+                          >
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            {payingMatchId === m.id ? "Initializing..." : "Pay Now via Paystack"}
+                          </Button>
+                        )}
+                        {m.commission_status === "paid" && (
+                          <div className="mt-3 text-center text-sm text-success font-medium">✅ Payment Complete</div>
+                        )}
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="roommates">
-              {/* Request Roommate Match Button */}
               <Card className="mb-4 border-primary/20">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
@@ -242,6 +297,17 @@ export default function MyMatches() {
                             <Badge variant="outline" className={statusColors[r.status] || ""}>{r.status}</Badge>
                           </div>
                         </div>
+                        {/* Message roommate button */}
+                        {r.partner_user_id && (
+                          <Button
+                            onClick={() => messageRoommate(r.partner_user_id!)}
+                            variant="outline"
+                            size="sm"
+                            className="mt-3 w-full"
+                          >
+                            <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
                   ))}

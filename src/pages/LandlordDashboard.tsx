@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { LandlordOccupancyTab } from "@/components/landlord/LandlordOccupancyTab";
 import { LandlordPaymentsTab } from "@/components/landlord/LandlordPaymentsTab";
 import { LandlordMaintenanceTab } from "@/components/landlord/LandlordMaintenanceTab";
-import { Building2, DollarSign, Wrench } from "lucide-react";
+import { LandlordInspectionsTab } from "@/components/landlord/LandlordInspectionsTab";
+import { Building2, DollarSign, Wrench, CalendarDays } from "lucide-react";
 
 export default function LandlordDashboard() {
   const { user, userRole, loading } = useAuth();
@@ -28,12 +29,14 @@ export default function LandlordDashboard() {
           </Badge>
         </div>
         <Tabs defaultValue="occupancy">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex-wrap">
             <TabsTrigger value="occupancy"><Building2 className="mr-2 h-4 w-4" />Occupancy</TabsTrigger>
+            <TabsTrigger value="inspections"><CalendarDays className="mr-2 h-4 w-4" />Inspections</TabsTrigger>
             <TabsTrigger value="payments"><DollarSign className="mr-2 h-4 w-4" />Payments</TabsTrigger>
             <TabsTrigger value="maintenance"><Wrench className="mr-2 h-4 w-4" />Maintenance</TabsTrigger>
           </TabsList>
           <TabsContent value="occupancy"><LandlordOccupancyTab /></TabsContent>
+          <TabsContent value="inspections"><LandlordInspectionsTab /></TabsContent>
           <TabsContent value="payments"><LandlordPaymentsTab /></TabsContent>
           <TabsContent value="maintenance"><LandlordMaintenanceTab /></TabsContent>
         </Tabs>
