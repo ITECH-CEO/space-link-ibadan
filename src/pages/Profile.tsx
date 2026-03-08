@@ -78,6 +78,10 @@ export default function Profile() {
   if (!user) return <Navigate to="/auth" replace />;
 
   const handleSave = async () => {
+    if (!form.gender) {
+      toast.error("Gender is required");
+      return;
+    }
     setSaving(true);
     const payload: any = {
       full_name: form.full_name,
@@ -93,6 +97,7 @@ export default function Profile() {
       current_photo_url: form.current_photo_url || null,
       course: form.course || null, faculty: form.faculty || null, level: form.level || null,
       seeking_roommate: form.seeking_roommate,
+      gender: form.gender || null,
       user_id: user.id, email: user.email,
     };
 
