@@ -3,16 +3,14 @@ import { Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { MessageCircle, Send, Smile } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConversationList, type Conversation } from "@/components/messaging/ConversationList";
-import { MessageBubble, type Message } from "@/components/messaging/MessageBubble";
+import { MessageBubble, type Message, type MessageReaction } from "@/components/messaging/MessageBubble";
 import { ChatHeader } from "@/components/messaging/ChatHeader";
+import { ChatInput } from "@/components/messaging/ChatInput";
 import { TypingIndicator } from "@/components/messaging/TypingIndicator";
 import { DateSeparator } from "@/components/messaging/DateSeparator";
 import { format } from "date-fns";
@@ -26,10 +24,10 @@ export default function Messages() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvo, setActiveConvo] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [partnerTyping, setPartnerTyping] = useState(false);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -44,7 +42,6 @@ export default function Messages() {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Fetch conversations
   const fetchConversations = useCallback(async () => {
     if (!user) return;
     const { data: convos } = await (supabase as any)
@@ -63,14 +60,15 @@ export default function Messages() {
       c.participant_a === user.id ? c.participant_b : c.participant_a
     );
 
-    // Fetch profiles, unread counts, and last messages in parallel
     const [profilesRes, unreadRes, lastMsgRes, contextRes] = await Promise.all([
       supabase.from("profiles").select("user_id, full_name, avatar_url, last_seen_at").in("user_id", partnerIds),
       (supabase as any).from("messages").select("conversation_id").eq("read", false).neq("sender_id", user.id).in("conversation_id", convos.map((c: any) => c.id)),
       Promise.all(convos.map((c: any) =>
-        (supabase as any).from("messages").select("content").eq("conversation_id", c.id).order("created_at", { ascending: false }).limit(1).then((r: any) => ({ id: c.id, content: r.data?.[0]?.content }))
+        (supabase as any).from("messages").select("content, message_type").eq("conversation_id", c.id).order("created_at", { ascending: false }).limit(1).then((r: any) => ({
+          id: c.id,
+          content: r.data?.[0]?.message_type === "image" ? "📷 Photo" : r.data?.[0]?.message_type === "file" ? "📎 File" : r.data?.[0]?.content,
+        }))
       )),
-      // Fetch context labels for property-linked convos
       Promise.all(convos.filter((c: any) => c.context_type === "property" && c.context_id).map((c: any) =>
         supabase.from("properties").select("property_name").eq("id", c.context_id).single().then((r) => ({ id: c.id, label: r.data?.property_name }))
       )),
@@ -139,51 +137,98 @@ export default function Messages() {
     fetchConversations();
   }, [fetchConversations]);
 
-  // Fetch messages for active conversation
+  // Fetch messages + reactions for active conversation
+  const fetchMessagesWithReactions = useCallback(async (convoId: string) => {
+    const [messagesRes, reactionsRes] = await Promise.all([
+      (supabase as any).from("messages").select("*").eq("conversation_id", convoId).order("created_at", { ascending: true }),
+      (supabase as any).from("message_reactions").select("*"),
+    ]);
+
+    const msgs: Message[] = messagesRes.data || [];
+    const allReactions = reactionsRes.data || [];
+
+    // Fetch reply-to content for messages that have reply_to_id
+    const replyIds = [...new Set(msgs.filter((m) => m.reply_to_id).map((m) => m.reply_to_id))];
+    let replyMap = new Map<string, { content: string; sender_id: string }>();
+
+    if (replyIds.length > 0) {
+      const { data: replyMsgs } = await (supabase as any).from("messages").select("id, content, sender_id").in("id", replyIds);
+      (replyMsgs || []).forEach((r: any) => replyMap.set(r.id, { content: r.content, sender_id: r.sender_id }));
+    }
+
+    // Get partner name for reply attribution
+    const activeConversation = conversations.find((c) => c.id === convoId);
+
+    const enriched = msgs.map((m) => {
+      // Reactions for this message
+      const msgReactions = allReactions.filter((r: any) => r.message_id === m.id);
+      const emojiGroups = new Map<string, { count: number; reacted: boolean }>();
+      msgReactions.forEach((r: any) => {
+        const existing = emojiGroups.get(r.emoji) || { count: 0, reacted: false };
+        existing.count++;
+        if (r.user_id === user?.id) existing.reacted = true;
+        emojiGroups.set(r.emoji, existing);
+      });
+
+      // Reply-to data
+      let reply_to = null;
+      if (m.reply_to_id && replyMap.has(m.reply_to_id)) {
+        const rd = replyMap.get(m.reply_to_id)!;
+        reply_to = {
+          content: rd.content,
+          sender_name: rd.sender_id === user?.id ? "You" : activeConversation?.partner_name || "User",
+        };
+      }
+
+      return {
+        ...m,
+        reply_to,
+        reactions: Array.from(emojiGroups.entries()).map(([emoji, data]) => ({
+          emoji,
+          count: data.count,
+          reacted: data.reacted,
+        })),
+      };
+    });
+
+    setMessages(enriched);
+
+    // Mark unread as read
+    if (user) {
+      await (supabase as any)
+        .from("messages")
+        .update({ read: true })
+        .eq("conversation_id", convoId)
+        .neq("sender_id", user.id)
+        .eq("read", false);
+    }
+  }, [user, conversations]);
+
   useEffect(() => {
     if (!activeConvo) return;
-    const fetchMessages = async () => {
-      const { data } = await (supabase as any)
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", activeConvo)
-        .order("created_at", { ascending: true });
-      setMessages(data || []);
-
-      if (user) {
-        await (supabase as any)
-          .from("messages")
-          .update({ read: true })
-          .eq("conversation_id", activeConvo)
-          .neq("sender_id", user.id)
-          .eq("read", false);
-      }
-    };
-    fetchMessages();
+    fetchMessagesWithReactions(activeConvo);
 
     // Realtime messages
     const channel = supabase
       .channel(`messages-${activeConvo}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${activeConvo}` },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
-          if (user && (payload.new as Message).sender_id !== user.id) {
-            (supabase as any).from("messages").update({ read: true }).eq("id", (payload.new as Message).id);
-          }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${activeConvo}` },
-        (payload) => {
-          setMessages((prev) => prev.map((m) => m.id === (payload.new as Message).id ? payload.new as Message : m));
-        }
+        { event: "*", schema: "public", table: "messages", filter: `conversation_id=eq.${activeConvo}` },
+        () => fetchMessagesWithReactions(activeConvo)
       )
       .subscribe();
 
-    // Typing presence channel
+    // Realtime reactions
+    const reactionsChannel = supabase
+      .channel(`reactions-${activeConvo}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "message_reactions" },
+        () => fetchMessagesWithReactions(activeConvo)
+      )
+      .subscribe();
+
+    // Typing presence
     const presenceChannel = supabase.channel(`typing-${activeConvo}`);
     presenceChannel
       .on("broadcast", { event: "typing" }, (payload) => {
@@ -197,16 +242,16 @@ export default function Messages() {
 
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(reactionsChannel);
       supabase.removeChannel(presenceChannel);
     };
-  }, [activeConvo, user]);
+  }, [activeConvo, user, fetchMessagesWithReactions]);
 
   // Auto-scroll
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, partnerTyping]);
 
-  // Broadcast typing
   const broadcastTyping = useCallback(() => {
     if (!activeConvo || !user) return;
     supabase.channel(`typing-${activeConvo}`).send({
@@ -216,17 +261,24 @@ export default function Messages() {
     });
   }, [activeConvo, user]);
 
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !activeConvo || !user) return;
+  const handleSend = async (content: string, messageType: string, fileUrl?: string, fileName?: string, replyToId?: string) => {
+    if (!activeConvo || !user) return;
+    if (!content && !fileUrl) return;
     setSending(true);
-    const { error } = await (supabase as any).from("messages").insert({
+
+    const insertData: any = {
       conversation_id: activeConvo,
       sender_id: user.id,
-      content: newMessage.trim(),
-    });
+      content: content || "",
+      message_type: messageType,
+    };
+    if (fileUrl) insertData.file_url = fileUrl;
+    if (fileName) insertData.file_name = fileName;
+    if (replyToId) insertData.reply_to_id = replyToId;
+
+    const { error } = await (supabase as any).from("messages").insert(insertData);
     if (error) toast.error("Failed to send");
     else {
-      setNewMessage("");
       await (supabase as any)
         .from("conversations")
         .update({ last_message_at: new Date().toISOString() })
@@ -234,6 +286,28 @@ export default function Messages() {
       fetchConversations();
     }
     setSending(false);
+  };
+
+  const handleReact = async (messageId: string, emoji: string) => {
+    if (!user) return;
+    // Check if already reacted with this emoji
+    const { data: existing } = await (supabase as any)
+      .from("message_reactions")
+      .select("id")
+      .eq("message_id", messageId)
+      .eq("user_id", user.id)
+      .eq("emoji", emoji)
+      .maybeSingle();
+
+    if (existing) {
+      await (supabase as any).from("message_reactions").delete().eq("id", existing.id);
+    } else {
+      await (supabase as any).from("message_reactions").insert({
+        message_id: messageId,
+        user_id: user.id,
+        emoji,
+      });
+    }
   };
 
   if (authLoading) return null;
@@ -307,6 +381,8 @@ export default function Messages() {
                                 showAvatar={showAvatar}
                                 partnerName={activeConversation.partner_name}
                                 partnerAvatar={activeConversation.partner_avatar}
+                                onReply={setReplyTo}
+                                onReact={handleReact}
                               />
                             );
                           })}
@@ -319,27 +395,15 @@ export default function Messages() {
                     <div ref={scrollRef} />
                   </div>
                 </ScrollArea>
-                <div className="border-t border-border/50 p-3 flex gap-2 bg-card">
-                  <Input
-                    value={newMessage}
-                    onChange={(e) => {
-                      setNewMessage(e.target.value);
-                      broadcastTyping();
-                    }}
-                    placeholder="Type a message..."
-                    maxLength={1000}
-                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                    className="bg-muted/50 border-0"
-                  />
-                  <Button
-                    onClick={sendMessage}
-                    disabled={sending || !newMessage.trim()}
-                    size="icon"
-                    className="gradient-primary text-primary-foreground flex-shrink-0"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
+                <ChatInput
+                  onSend={handleSend}
+                  sending={sending}
+                  replyTo={replyTo}
+                  onCancelReply={() => setReplyTo(null)}
+                  onTyping={broadcastTyping}
+                  conversationId={activeConvo}
+                  userId={user.id}
+                />
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center text-muted-foreground">
