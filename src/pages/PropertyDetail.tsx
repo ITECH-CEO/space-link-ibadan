@@ -182,46 +182,7 @@ export default function PropertyDetail() {
     verify();
   }, [searchParams, user]);
 
-  const availableDates = [...new Set(slots.map((s) => s.slot_date))];
-  const slotsForDate = selectedDate
-    ? slots.filter((s) => s.slot_date === format(selectedDate, "yyyy-MM-dd") && s.current_bookings < s.max_bookings)
-    : [];
-
-  const bookSlot = async (slot: InspectionSlot) => {
-    if (!user) { toast.error("Please sign in first"); return; }
-    setBooking(true);
-
-    const { data: client } = await (supabase as any)
-      .from("clients")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!client) {
-      toast.error("Please complete your profile first");
-      setBooking(false);
-      return;
-    }
-
-    const { error } = await (supabase as any).from("inspection_bookings").insert({
-      slot_id: slot.id,
-      property_id: id,
-      client_id: client.id,
-      user_id: user.id,
-    });
-
-    if (error) {
-      toast.error(error.message || "Booking failed");
-    } else {
-      toast.success("Inspection booked! You'll receive a confirmation notification.");
-      setBookingInfo({
-        id: "", status: "confirmed", slot_id: slot.id,
-        slot_date: slot.slot_date, slot_time: slot.slot_time,
-      });
-      setDialogOpen(false);
-    }
-    setBooking(false);
-  };
+  const isDayAvailable = (date: Date) => availableDates.includes(format(date, "yyyy-MM-dd"));
 
   const cancelBooking = async () => {
     if (!bookingInfo) return;
