@@ -431,6 +431,11 @@ export default function MyMatches() {
             </TabsContent>
           </Tabs>
         )}
+
+        {/* Rent Payments Section */}
+        <div className="mt-8">
+          <ClientRentPayments />
+        </div>
       </main>
       <WhatsAppButton />
       <MatchesTour />
