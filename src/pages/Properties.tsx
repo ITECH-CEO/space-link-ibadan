@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, MapPin, Users, Search, DollarSign, SlidersHorizontal, X, Heart, Map, List } from "lucide-react";
+import { Building2, MapPin, Users, Search, DollarSign, SlidersHorizontal, X, Heart, Map, List, Footprints, Navigation, Star } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { PropertyMap } from "@/components/PropertyMap";
