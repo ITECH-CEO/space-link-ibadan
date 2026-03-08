@@ -4,10 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, MapPin, Users, Wifi, Zap, Shield, Droplets, Search, DollarSign } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Building2, MapPin, Users, Search, DollarSign, SlidersHorizontal, X } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 interface PropertyWithRooms extends Tables<"properties"> {
@@ -18,6 +20,9 @@ export default function Properties() {
   const [properties, setProperties] = useState<PropertyWithRooms[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [maxPrice, setMaxPrice] = useState<number>(500000);
+  const [facilityFilter, setFacilityFilter] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,19 +37,38 @@ export default function Properties() {
       });
   }, []);
 
+  // Collect all unique facilities
+  const allFacilities = [...new Set(properties.flatMap((p) => p.facilities || []))].sort();
+
+  const getMinPrice = (p: PropertyWithRooms) => {
+    if (!p.room_types || p.room_types.length === 0) return null;
+    return Math.min(...p.room_types.map((r) => r.price));
+  };
+
   const filtered = properties.filter((p) => {
     const matchesSearch =
       p.property_name.toLowerCase().includes(search.toLowerCase()) ||
       p.address.toLowerCase().includes(search.toLowerCase()) ||
       (p.location || "").toLowerCase().includes(search.toLowerCase());
     const matchesType = typeFilter === "all" || p.property_type === typeFilter;
-    return matchesSearch && matchesType;
+    const minPrice = getMinPrice(p);
+    const matchesPrice = !minPrice || minPrice <= maxPrice;
+    const matchesFacilities =
+      facilityFilter.length === 0 ||
+      facilityFilter.every((f) => (p.facilities || []).includes(f));
+    return matchesSearch && matchesType && matchesPrice && matchesFacilities;
   });
 
-  const getMinPrice = (p: PropertyWithRooms) => {
-    if (!p.room_types || p.room_types.length === 0) return null;
-    return Math.min(...p.room_types.map((r) => r.price));
+  const toggleFacility = (f: string) => {
+    setFacilityFilter((prev) =>
+      prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]
+    );
   };
+
+  const activeFilterCount =
+    (typeFilter !== "all" ? 1 : 0) +
+    (maxPrice < 500000 ? 1 : 0) +
+    facilityFilter.length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,9 +76,11 @@ export default function Properties() {
       <main className="container py-8">
         <div className="mb-8">
           <h1 className="font-display text-3xl font-bold">Browse Properties</h1>
-          <p className="text-muted-foreground">Verified accommodations in Ibadan</p>
+          <p className="text-muted-foreground">Verified accommodations near you</p>
         </div>
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+
+        {/* Search + Filter Toggle */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -65,22 +91,110 @@ export default function Properties() {
               maxLength={100}
             />
           </div>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-full sm:w-[150px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="single">Single</SelectItem>
-              <SelectItem value="shared">Shared</SelectItem>
-              <SelectItem value="hostel">Hostel</SelectItem>
-            </SelectContent>
-          </Select>
+          <Button
+            variant={showFilters ? "default" : "outline"}
+            onClick={() => setShowFilters(!showFilters)}
+            className={showFilters ? "gradient-primary text-primary-foreground" : ""}
+          >
+            <SlidersHorizontal className="mr-2 h-4 w-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <Badge className="ml-2 gradient-accent text-accent-foreground text-xs h-5 min-w-5">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </Button>
         </div>
+
+        {/* Expanded Filters */}
+        {showFilters && (
+          <Card className="mb-6">
+            <CardContent className="pt-6 space-y-5">
+              <div className="grid gap-4 sm:grid-cols-3">
+                {/* Property Type */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Property Type</label>
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="single">Single</SelectItem>
+                      <SelectItem value="shared">Shared</SelectItem>
+                      <SelectItem value="hostel">Hostel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Max Price */}
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="text-sm font-medium">
+                    Max Price: <span className="text-primary font-bold">₦{maxPrice.toLocaleString()}</span>
+                  </label>
+                  <Slider
+                    value={[maxPrice]}
+                    onValueChange={([v]) => setMaxPrice(v)}
+                    min={10000}
+                    max={500000}
+                    step={5000}
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>₦10,000</span>
+                    <span>₦500,000</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Facilities */}
+              {allFacilities.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Facilities</label>
+                  <div className="flex flex-wrap gap-2">
+                    {allFacilities.map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => toggleFacility(f)}
+                        className={`rounded-full px-3 py-1 text-xs transition-colors ${
+                          facilityFilter.includes(f)
+                            ? "gradient-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeFilterCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setTypeFilter("all");
+                    setMaxPrice(500000);
+                    setFacilityFilter([]);
+                  }}
+                  className="text-destructive"
+                >
+                  <X className="mr-1 h-3 w-3" /> Clear all filters
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Results count */}
+        <p className="mb-4 text-sm text-muted-foreground">
+          {filtered.length} {filtered.length === 1 ? "property" : "properties"} found
+        </p>
+
         {loading ? (
           <p className="text-muted-foreground">Loading properties...</p>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">
             <Building2 className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
-            <p className="text-muted-foreground">No properties found.</p>
+            <p className="text-muted-foreground">No properties found. Try adjusting your filters.</p>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -88,57 +202,56 @@ export default function Properties() {
               const minPrice = getMinPrice(p);
               return (
                 <Link key={p.id} to={`/property/${p.id}`}>
-                <Card className="overflow-hidden transition-shadow hover:shadow-lg cursor-pointer">
-                  <div className="gradient-primary p-4">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 capitalize">
-                        {p.property_type}
-                      </Badge>
-                      <VerificationBadge status={p.verification_status} />
-                    </div>
-                  </div>
-                  <CardContent className="pt-4">
-                    <h3 className="mb-1 font-display text-lg font-semibold">{p.property_name}</h3>
-                    <div className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
-                      <MapPin className="h-3 w-3" />{p.address}
-                    </div>
-                    {p.proximity_to_campus && (
-                      <p className="mb-3 text-xs text-muted-foreground">📍 {p.proximity_to_campus}</p>
-                    )}
-                    <div className="mb-3 flex items-center gap-4 text-sm">
-                      <span className="flex items-center gap-1">
-                        <Users className="h-4 w-4 text-primary" />
-                        {p.available_rooms}/{p.total_rooms} rooms
-                      </span>
-                      {minPrice && (
-                        <span className="flex items-center gap-1 font-semibold text-primary">
-                          <DollarSign className="h-4 w-4" />
-                          From ₦{minPrice.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                    {p.facilities && p.facilities.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {p.facilities.map((f) => (
-                          <Badge key={f} variant="secondary" className="text-xs">{f}</Badge>
-                        ))}
+                  <Card className="overflow-hidden transition-shadow hover:shadow-lg cursor-pointer">
+                    <div className="gradient-primary p-4">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 capitalize">
+                          {p.property_type}
+                        </Badge>
+                        <VerificationBadge status={p.verification_status} />
                       </div>
-                    )}
-                    {p.room_types && p.room_types.length > 0 && (
-                      <div className="border-t pt-2 mt-2">
-                        <p className="text-xs font-semibold text-muted-foreground mb-1">Room Types:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {p.room_types.map((rt) => (
-                            <Badge key={rt.id} variant="outline" className="text-xs">
-                              {rt.name} — ₦{rt.price.toLocaleString()}
-                            </Badge>
+                    </div>
+                    <CardContent className="pt-4">
+                      <h3 className="mb-1 font-display text-lg font-semibold">{p.property_name}</h3>
+                      <div className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="h-3 w-3" />{p.address}
+                      </div>
+                      {p.proximity_to_campus && (
+                        <p className="mb-3 text-xs text-muted-foreground">📍 {p.proximity_to_campus}</p>
+                      )}
+                      <div className="mb-3 flex items-center gap-4 text-sm">
+                        <span className="flex items-center gap-1">
+                          <Users className="h-4 w-4 text-primary" />
+                          {p.available_rooms}/{p.total_rooms} rooms
+                        </span>
+                        {minPrice && (
+                          <span className="flex items-center gap-1 font-semibold text-primary">
+                            <DollarSign className="h-4 w-4" />
+                            From ₦{minPrice.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      {p.facilities && p.facilities.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {p.facilities.map((f) => (
+                            <Badge key={f} variant="secondary" className="text-xs">{f}</Badge>
                           ))}
                         </div>
-                      </div>
-                    )}
-                    
-                  </CardContent>
-                </Card>
+                      )}
+                      {p.room_types && p.room_types.length > 0 && (
+                        <div className="border-t pt-2 mt-2">
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">Room Types:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {p.room_types.map((rt) => (
+                              <Badge key={rt.id} variant="outline" className="text-xs">
+                                {rt.name} — ₦{rt.price.toLocaleString()}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </Link>
               );
             })}

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Building2, User, Handshake, Home } from "lucide-react";
+import { LogOut, LayoutDashboard, Building2, User, Handshake, Home, MessageCircle } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import mycribLogo from "@/assets/mycrib-logo.png";
 
@@ -32,6 +32,10 @@ export function Navbar() {
                   <span className="hidden sm:inline">My Matches</span>
                 </Button>
               )}
+              <Button variant="ghost" size="sm" onClick={() => navigate("/messages")}>
+                <MessageCircle className="mr-1.5 h-4 w-4" />
+                <span className="hidden sm:inline">Messages</span>
+              </Button>
               {isLandlord && (
                 <>
                   <Button variant="ghost" size="sm" onClick={() => navigate("/landlord")}>
