@@ -145,6 +145,34 @@ export function LandlordRentTab() {
 
   const filtered = filter === "all" ? payments : payments.filter((p) => p.status === filter);
 
+  const exportCsv = () => {
+    if (filtered.length === 0) { toast.error("No data to export"); return; }
+    const headers = "Due Date,Tenant,Phone,Property,Room,Amount,Status,Paid Date,Payment Method,Notes";
+    const rows = filtered.map((p) =>
+      [
+        p.due_date,
+        `"${p.tenant_name}"`,
+        p.tenant_phone || "",
+        `"${getPropertyName(p.property_id)}"`,
+        `"${getRoomName(p.room_type_id)}"`,
+        p.amount,
+        p.status,
+        p.paid_date || "",
+        p.payment_method || "",
+        `"${(p.notes || "").replace(/"/g, '""')}"`,
+      ].join(",")
+    );
+    const csv = headers + "\n" + rows.join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rent_payments_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Exported successfully");
+  };
+
   const getPropertyName = (id: string) => properties.find((p) => p.id === id)?.property_name || "—";
   const getRoomName = (id: string | null) => (id ? roomTypes.find((r) => r.id === id)?.name || "—" : "—");
 
