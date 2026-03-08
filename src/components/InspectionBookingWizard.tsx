@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
-import { CalendarDays, Clock, Check, MapPin, Building2, CreditCard, ArrowLeft, ArrowRight, Loader2, Shield } from "lucide-react";
+import { CalendarDays, Clock, Check, MapPin, Building2, ArrowLeft, ArrowRight, Loader2, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +31,7 @@ interface InspectionBookingWizardProps {
 const STEPS = [
   { label: "Pick a Slot", icon: CalendarDays },
   { label: "Review Details", icon: Building2 },
-  { label: "Pay & Confirm", icon: CreditCard },
+  { label: "Confirm", icon: Check },
 ];
 
 export function InspectionBookingWizard({
@@ -41,10 +41,7 @@ export function InspectionBookingWizard({
   const [step, setStep] = useState(0);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedSlot, setSelectedSlot] = useState<InspectionSlot | null>(null);
-  const [inspectionFee, setInspectionFee] = useState<number>(0);
-  const [feeLoading, setFeeLoading] = useState(true);
   const [booking, setBooking] = useState(false);
-  const [paying, setPaying] = useState(false);
 
   const availableDates = [...new Set(slots.map((s) => s.slot_date))];
   const slotsForDate = selectedDate
@@ -52,20 +49,6 @@ export function InspectionBookingWizard({
     : [];
 
   const isDayAvailable = (date: Date) => availableDates.includes(format(date, "yyyy-MM-dd"));
-
-  // Fetch inspection fee
-  useEffect(() => {
-    (supabase as any)
-      .from("platform_fees")
-      .select("amount, is_active")
-      .eq("fee_type", "inspection")
-      .maybeSingle()
-      .then(({ data }: any) => {
-        if (data?.is_active) setInspectionFee(data.amount);
-        else setInspectionFee(0);
-        setFeeLoading(false);
-      });
-  }, []);
 
   const handleSlotSelect = (slot: InspectionSlot) => {
     setSelectedSlot(slot);
@@ -76,13 +59,12 @@ export function InspectionBookingWizard({
     setStep(1);
   };
 
-  const proceedToPayment = () => setStep(2);
+  const proceedToConfirm = () => setStep(2);
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
-  const createBookingAndPay = async () => {
+  const createBooking = async () => {
     if (!user || !selectedSlot) return;
 
-    // Get client record
     const { data: client } = await (supabase as any)
       .from("clients").select("id").eq("user_id", user.id).maybeSingle();
     if (!client) {
@@ -90,76 +72,32 @@ export function InspectionBookingWizard({
       return;
     }
 
-    if (inspectionFee > 0) {
-      // Pay first, then book
-      setPaying(true);
-      try {
-        const { data: payData, error: payError } = await supabase.functions.invoke("paystack-initialize", {
-          body: {
-            email: user.email,
-            amount: inspectionFee,
-            callback_url: `${window.location.origin}/property/${propertyId}?verify_inspection=true`,
-            metadata: {
-              payment_type: "inspection",
-              property_id: propertyId,
-              slot_id: selectedSlot.id,
-              client_id: client.id,
-              user_id: user.id,
-            },
-          },
-        });
+    setBooking(true);
+    const { data: bookingData, error } = await (supabase as any)
+      .from("inspection_bookings")
+      .insert({
+        slot_id: selectedSlot.id,
+        property_id: propertyId,
+        client_id: client.id,
+        user_id: user.id,
+        payment_status: "free",
+      })
+      .select("id")
+      .single();
 
-        if (payError || !payData?.authorization_url) {
-          toast.error(payData?.error || "Payment initialization failed");
-          setPaying(false);
-          return;
-        }
-
-        // Store pending booking info in sessionStorage so we can complete after redirect
-        sessionStorage.setItem("pending_inspection", JSON.stringify({
-          slot_id: selectedSlot.id,
-          property_id: propertyId,
-          client_id: client.id,
-          user_id: user.id,
-          slot_date: selectedSlot.slot_date,
-          slot_time: selectedSlot.slot_time,
-          reference: payData.reference,
-        }));
-
-        window.location.href = payData.authorization_url;
-      } catch (err: any) {
-        toast.error(err.message || "Payment failed");
-        setPaying(false);
-      }
+    if (error) {
+      toast.error(error.message || "Booking failed");
     } else {
-      // Free inspection — book directly
-      setBooking(true);
-      const { data: bookingData, error } = await (supabase as any)
-        .from("inspection_bookings")
-        .insert({
-          slot_id: selectedSlot.id,
-          property_id: propertyId,
-          client_id: client.id,
-          user_id: user.id,
-          payment_status: "free",
-        })
-        .select("id")
-        .single();
-
-      if (error) {
-        toast.error(error.message || "Booking failed");
-      } else {
-        toast.success("Inspection booked successfully!");
-        onBookingComplete({
-          id: bookingData.id,
-          status: "confirmed",
-          slot_id: selectedSlot.id,
-          slot_date: selectedSlot.slot_date,
-          slot_time: selectedSlot.slot_time,
-        });
-      }
-      setBooking(false);
+      toast.success("Inspection booked successfully!");
+      onBookingComplete({
+        id: bookingData.id,
+        status: "confirmed",
+        slot_id: selectedSlot.id,
+        slot_date: selectedSlot.slot_date,
+        slot_time: selectedSlot.slot_time,
+      });
     }
+    setBooking(false);
   };
 
   return (
@@ -270,65 +208,28 @@ export function InspectionBookingWizard({
             </CardContent>
           </Card>
 
-          {/* Fee Breakdown */}
-          <Card className="border-primary/20">
-            <CardContent className="pt-5">
-              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <CreditCard className="h-4 w-4" /> Fee Breakdown
-              </h4>
-              {feeLoading ? (
-                <p className="text-sm text-muted-foreground">Loading fees...</p>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Inspection fee</span>
-                    <span className="font-medium">{inspectionFee > 0 ? `₦${inspectionFee.toLocaleString()}` : "Free"}</span>
-                  </div>
-                  <div className="border-t pt-2 flex items-center justify-between font-semibold">
-                    <span>Total</span>
-                    <span className="text-primary text-lg">{inspectionFee > 0 ? `₦${inspectionFee.toLocaleString()}` : "Free"}</span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           <div className="flex justify-between pt-2">
             <Button variant="ghost" onClick={goBack}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
-            <Button onClick={proceedToPayment} className="gradient-primary text-primary-foreground">
-              {inspectionFee > 0 ? "Proceed to Pay" : "Confirm Booking"} <ArrowRight className="ml-2 h-4 w-4" />
+            <Button onClick={proceedToConfirm} className="gradient-primary text-primary-foreground">
+              Confirm Booking <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* Step 3: Pay & Confirm */}
+      {/* Step 3: Confirm */}
       {step === 2 && selectedSlot && (
         <div className="space-y-4">
           <div className="text-center py-4">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <Shield className="h-8 w-8 text-primary" />
             </div>
-            {inspectionFee > 0 ? (
-              <>
-                <h3 className="text-lg font-bold">Complete Payment</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  You'll be redirected to Paystack to pay <span className="font-semibold text-foreground">₦{inspectionFee.toLocaleString()}</span>
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Your inspection will be confirmed once payment is successful.
-                </p>
-              </>
-            ) : (
-              <>
-                <h3 className="text-lg font-bold">Confirm Your Inspection</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  No fee required. Click below to confirm your booking.
-                </p>
-              </>
-            )}
+            <h3 className="text-lg font-bold">Confirm Your Inspection</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Click below to confirm your booking.
+            </p>
           </div>
 
           {/* Summary */}
@@ -345,12 +246,6 @@ export function InspectionBookingWizard({
               <span className="text-muted-foreground">Time</span>
               <span className="font-medium">{selectedSlot.slot_time.slice(0, 5)}</span>
             </div>
-            {inspectionFee > 0 && (
-              <div className="flex justify-between border-t pt-1 mt-1">
-                <span className="text-muted-foreground">Amount</span>
-                <span className="font-bold text-primary">₦{inspectionFee.toLocaleString()}</span>
-              </div>
-            )}
           </div>
 
           <div className="flex justify-between pt-2">
@@ -358,14 +253,12 @@ export function InspectionBookingWizard({
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
             <Button
-              onClick={createBookingAndPay}
-              disabled={booking || paying}
+              onClick={createBooking}
+              disabled={booking}
               className="gradient-accent text-accent-foreground font-semibold min-w-[160px]"
             >
-              {booking || paying ? (
+              {booking ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
-              ) : inspectionFee > 0 ? (
-                <><CreditCard className="mr-2 h-4 w-4" /> Pay ₦{inspectionFee.toLocaleString()}</>
               ) : (
                 <><Check className="mr-2 h-4 w-4" /> Confirm Booking</>
               )}

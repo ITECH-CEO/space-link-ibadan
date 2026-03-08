@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -43,13 +42,10 @@ interface BookingInfo {
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { user, userRole } = useAuth();
   const [property, setProperty] = useState<PropertyWithRooms | null>(null);
   const [loading, setLoading] = useState(true);
   const [slots, setSlots] = useState<InspectionSlot[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [booking, setBooking] = useState(false);
   const [bookingInfo, setBookingInfo] = useState<BookingInfo | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -78,7 +74,6 @@ export default function PropertyDetail() {
         setLoading(false);
       });
 
-    // Fetch available slots
     (supabase as any)
       .from("inspection_slots")
       .select("*")
@@ -88,7 +83,6 @@ export default function PropertyDetail() {
       .order("slot_time", { ascending: true })
       .then(({ data }: any) => setSlots(data || []));
 
-    // Check if user already booked & get booking details
     if (user) {
       (supabase as any)
         .from("inspection_bookings")
@@ -98,7 +92,6 @@ export default function PropertyDetail() {
         .maybeSingle()
         .then(async ({ data }: any) => {
           if (data) {
-            // Get slot info
             const { data: slotData } = await (supabase as any)
               .from("inspection_slots")
               .select("slot_date, slot_time")
@@ -110,7 +103,6 @@ export default function PropertyDetail() {
               slot_time: slotData?.slot_time,
             });
 
-            // Check if feedback exists
             const { data: fb } = await (supabase as any)
               .from("inspection_feedback")
               .select("id")
@@ -122,70 +114,6 @@ export default function PropertyDetail() {
         });
     }
   }, [id, user]);
-
-  // Handle payment redirect verification
-  useEffect(() => {
-    const verifyInspection = searchParams.get("verify_inspection");
-    const reference = searchParams.get("reference") || searchParams.get("trxref");
-    if (!verifyInspection || !reference || !user) return;
-
-    const pendingStr = sessionStorage.getItem("pending_inspection");
-    if (!pendingStr) return;
-
-    const pending = JSON.parse(pendingStr);
-
-    const verify = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("paystack-verify", {
-          body: { reference },
-        });
-
-        if (error || !data?.verified) {
-          toast.error("Payment verification failed. Please contact support.");
-          return;
-        }
-
-        // Create the booking now that payment is verified
-        const { data: bookingData, error: bookError } = await (supabase as any)
-          .from("inspection_bookings")
-          .insert({
-            slot_id: pending.slot_id,
-            property_id: pending.property_id,
-            client_id: pending.client_id,
-            user_id: pending.user_id,
-            payment_status: "paid",
-            payment_reference: reference,
-          })
-          .select("id")
-          .single();
-
-        if (bookError) {
-          toast.error(bookError.message || "Booking failed after payment");
-        } else {
-          toast.success("Payment successful! Inspection booked.");
-          setBookingInfo({
-            id: bookingData.id,
-            status: "confirmed",
-            slot_id: pending.slot_id,
-            slot_date: pending.slot_date,
-            slot_time: pending.slot_time,
-          });
-        }
-
-        sessionStorage.removeItem("pending_inspection");
-      } catch (err: any) {
-        toast.error(err.message || "Verification error");
-      }
-
-      // Clean URL
-      setSearchParams({}, { replace: true });
-    };
-
-    verify();
-  }, [searchParams, user]);
-
-  const availableDates = [...new Set(slots.map((s) => s.slot_date))];
-  const isDayAvailable = (date: Date) => availableDates.includes(format(date, "yyyy-MM-dd"));
 
   const cancelBooking = async () => {
     if (!bookingInfo) return;
@@ -229,7 +157,6 @@ export default function PropertyDetail() {
     ? `Hi MyCrib.ng, I've booked an inspection for "${property.property_name}" at ${property.address} on ${bookingInfo.slot_date} at ${bookingInfo.slot_time?.slice(0, 5)}. Please confirm.`
     : "";
 
-  // Check if booking date has passed (for feedback prompt)
   const bookingPassed = bookingInfo?.slot_date && new Date(bookingInfo.slot_date) < new Date();
 
   if (loading) {
@@ -640,4 +567,3 @@ export default function PropertyDetail() {
     </div>
   );
 }
-
