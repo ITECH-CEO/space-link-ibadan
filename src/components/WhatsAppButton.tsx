@@ -1,6 +1,6 @@
 import { MessageCircle } from "lucide-react";
 
-const WHATSAPP_NUMBER = "2349139abortyour"; // Replace with actual MyCrib.ng support number
+const WHATSAPP_NUMBER = "2349137425552";
 const DEFAULT_MESSAGE = "Hello MyCrib.ng! I need help finding accommodation.";
 
 export function WhatsAppButton() {
