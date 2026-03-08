@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PropertyForm } from "@/components/forms/PropertyForm";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, CheckCircle, XCircle } from "lucide-react";
+import type { Tables } from "@/integrations/supabase/types";
 import type { Tables } from "@/integrations/supabase/types";
 
 export function PropertiesTab() {
