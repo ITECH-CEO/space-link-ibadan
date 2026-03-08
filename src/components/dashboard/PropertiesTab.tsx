@@ -298,6 +298,13 @@ export function PropertiesTab() {
                 </Button>
               </>
             )}
+            <Button size="sm" variant="outline" onClick={downloadCsvTemplate}>
+              <Download className="mr-1 h-4 w-4" />Template
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => csvInputRef.current?.click()} disabled={csvUploading}>
+              <FileSpreadsheet className="mr-1 h-4 w-4" />{csvUploading ? "Importing..." : "CSV Import"}
+            </Button>
+            <input ref={csvInputRef} type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="gradient-primary text-primary-foreground">

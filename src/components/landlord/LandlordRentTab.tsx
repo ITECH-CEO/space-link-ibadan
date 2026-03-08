@@ -297,6 +297,7 @@ export function LandlordRentTab() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Table */}
