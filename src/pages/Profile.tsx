@@ -259,6 +259,9 @@ export default function Profile() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Referral Program */}
+        <ReferralCard />
       </main>
       <WhatsAppButton />
     </div>
