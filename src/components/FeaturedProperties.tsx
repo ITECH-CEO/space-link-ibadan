@@ -71,6 +71,11 @@ export function FeaturedProperties() {
                         <Badge variant="outline" className="bg-card/80 backdrop-blur-sm text-foreground border-border capitalize shadow-sm">
                           {p.property_type}
                         </Badge>
+                        {(p as any).management_type === "listed" ? (
+                          <Badge variant="outline" className="bg-accent/80 backdrop-blur-sm text-accent-foreground border-accent/30 shadow-sm text-[10px]">Listed</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-primary/80 backdrop-blur-sm text-primary-foreground border-primary/30 shadow-sm text-[10px]">Managed</Badge>
+                        )}
                       </div>
                       {minPrice && (
                         <div className="absolute bottom-3 left-3 z-10">
