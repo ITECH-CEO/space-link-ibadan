@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Banknote, Plus, CheckCircle, Clock, AlertTriangle, TrendingUp } from "lucide-react";
+import { Banknote, Plus, CheckCircle, Clock, AlertTriangle, TrendingUp, Download } from "lucide-react";
 import { toast } from "sonner";
 
 interface RentPayment {
@@ -145,6 +145,34 @@ export function LandlordRentTab() {
 
   const filtered = filter === "all" ? payments : payments.filter((p) => p.status === filter);
 
+  const exportCsv = () => {
+    if (filtered.length === 0) { toast.error("No data to export"); return; }
+    const headers = "Due Date,Tenant,Phone,Property,Room,Amount,Status,Paid Date,Payment Method,Notes";
+    const rows = filtered.map((p) =>
+      [
+        p.due_date,
+        `"${p.tenant_name}"`,
+        p.tenant_phone || "",
+        `"${getPropertyName(p.property_id)}"`,
+        `"${getRoomName(p.room_type_id)}"`,
+        p.amount,
+        p.status,
+        p.paid_date || "",
+        p.payment_method || "",
+        `"${(p.notes || "").replace(/"/g, '""')}"`,
+      ].join(",")
+    );
+    const csv = headers + "\n" + rows.join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rent_payments_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Exported successfully");
+  };
+
   const getPropertyName = (id: string) => properties.find((p) => p.id === id)?.property_name || "—";
   const getRoomName = (id: string | null) => (id ? roomTypes.find((r) => r.id === id)?.name || "—" : "—");
 
@@ -200,6 +228,10 @@ export function LandlordRentTab() {
             </Button>
           ))}
         </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={exportCsv}>
+            <Download className="mr-1 h-4 w-4" />Export CSV
+          </Button>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm"><Plus className="mr-2 h-4 w-4" />Record Payment</Button>
@@ -265,6 +297,7 @@ export function LandlordRentTab() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Table */}

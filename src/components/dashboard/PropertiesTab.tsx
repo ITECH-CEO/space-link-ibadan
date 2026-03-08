@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { PropertyForm } from "@/components/forms/PropertyForm";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, CheckCircle, XCircle, Pencil, Trash2, Search, Upload, X, Image } from "lucide-react";
+import { Plus, CheckCircle, XCircle, Pencil, Trash2, Search, Upload, X, Image, FileSpreadsheet, Download } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 export function PropertiesTab() {
@@ -28,6 +28,8 @@ export function PropertiesTab() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [newPhotos, setNewPhotos] = useState<File[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [csvUploading, setCsvUploading] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
@@ -176,6 +178,110 @@ export function PropertiesTab() {
     else { toast.success("Property deleted"); fetchProperties(); }
   };
 
+  const downloadCsvTemplate = () => {
+    const headers = "property_name,address,location,property_type,landlord_name,landlord_phone,landlord_email,total_rooms,available_rooms,proximity_to_campus,facilities,special_notes";
+    const example = '"Sunrise Hostel","12 Campus Rd","Akoka","hostel","John Doe","08012345678","john@email.com","20","5","500m","WiFi;Water;Security","Near campus gate"';
+    const csv = headers + "\n" + example;
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "properties_template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCsvUploading(true);
+
+    try {
+      const text = await file.text();
+      const lines = text.split("\n").filter((l) => l.trim());
+      if (lines.length < 2) {
+        toast.error("CSV must have a header row and at least one data row");
+        setCsvUploading(false);
+        return;
+      }
+
+      const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
+      const requiredFields = ["property_name", "address", "landlord_name"];
+      const missing = requiredFields.filter((f) => !headers.includes(f));
+      if (missing.length > 0) {
+        toast.error(`Missing required columns: ${missing.join(", ")}`);
+        setCsvUploading(false);
+        return;
+      }
+
+      // Parse CSV rows (handles quoted fields with commas)
+      const parseRow = (line: string): string[] => {
+        const result: string[] = [];
+        let current = "";
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === "," && !inQuotes) {
+            result.push(current.trim());
+            current = "";
+          } else {
+            current += char;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      const rows = lines.slice(1).map((line) => {
+        const values = parseRow(line);
+        const row: Record<string, string> = {};
+        headers.forEach((h, i) => {
+          row[h] = values[i] || "";
+        });
+        return row;
+      });
+
+      const validTypes = ["single", "shared", "hostel"];
+      const insertData = rows
+        .filter((r) => r.property_name && r.address && r.landlord_name)
+        .map((r) => ({
+          property_name: r.property_name,
+          address: r.address,
+          location: r.location || null,
+          property_type: (validTypes.includes(r.property_type) ? r.property_type : "single") as "single" | "shared" | "hostel",
+          landlord_name: r.landlord_name,
+          landlord_phone: r.landlord_phone || null,
+          landlord_email: r.landlord_email || null,
+          total_rooms: parseInt(r.total_rooms) || 0,
+          available_rooms: parseInt(r.available_rooms) || 0,
+          proximity_to_campus: r.proximity_to_campus || null,
+          facilities: r.facilities ? r.facilities.split(";").map((f: string) => f.trim()) : [],
+          special_notes: r.special_notes || null,
+        }));
+
+      if (insertData.length === 0) {
+        toast.error("No valid rows found in CSV");
+        setCsvUploading(false);
+        return;
+      }
+
+      const { error } = await supabase.from("properties").insert(insertData);
+      if (error) {
+        toast.error(`Upload failed: ${error.message}`);
+      } else {
+        toast.success(`${insertData.length} properties imported successfully!`);
+        fetchProperties();
+      }
+    } catch (err: any) {
+      toast.error(`CSV parse error: ${err.message}`);
+    }
+
+    setCsvUploading(false);
+    if (csvInputRef.current) csvInputRef.current.value = "";
+  };
+
   return (
     <>
       <Card className="card-elevated">
@@ -192,6 +298,13 @@ export function PropertiesTab() {
                 </Button>
               </>
             )}
+            <Button size="sm" variant="outline" onClick={downloadCsvTemplate}>
+              <Download className="mr-1 h-4 w-4" />Template
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => csvInputRef.current?.click()} disabled={csvUploading}>
+              <FileSpreadsheet className="mr-1 h-4 w-4" />{csvUploading ? "Importing..." : "CSV Import"}
+            </Button>
+            <input ref={csvInputRef} type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="gradient-primary text-primary-foreground">
