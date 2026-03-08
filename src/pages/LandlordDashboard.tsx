@@ -79,11 +79,13 @@ export default function LandlordDashboard() {
               <TabsTrigger value="inspections"><CalendarDays className="mr-2 h-4 w-4" />Inspections</TabsTrigger>
               <TabsTrigger value="payments"><Banknote className="mr-2 h-4 w-4" />Payments</TabsTrigger>
               <TabsTrigger value="complaints"><Wrench className="mr-2 h-4 w-4" />Complaints</TabsTrigger>
+              <TabsTrigger value="rent"><TrendingUp className="mr-2 h-4 w-4" />Rent Tracking</TabsTrigger>
             </TabsList>
             <TabsContent value="occupancy"><LandlordOccupancyTab /></TabsContent>
             <TabsContent value="inspections"><LandlordInspectionsTab /></TabsContent>
             <TabsContent value="payments"><LandlordPaymentsTab /></TabsContent>
             <TabsContent value="complaints"><LandlordMaintenanceTab /></TabsContent>
+            <TabsContent value="rent"><LandlordRentTab /></TabsContent>
           </Tabs>
         </motion.div>
       </main>
