@@ -977,6 +977,86 @@ export type Database = {
           },
         ]
       }
+      room_occupancies: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          match_id: string | null
+          move_in_date: string
+          move_out_date: string | null
+          notes: string | null
+          property_id: string
+          rent_status: string
+          room_type_id: string | null
+          status: string
+          tenant_name: string
+          tenant_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          match_id?: string | null
+          move_in_date?: string
+          move_out_date?: string | null
+          notes?: string | null
+          property_id: string
+          rent_status?: string
+          room_type_id?: string | null
+          status?: string
+          tenant_name: string
+          tenant_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          match_id?: string | null
+          move_in_date?: string
+          move_out_date?: string | null
+          notes?: string | null
+          property_id?: string
+          rent_status?: string
+          room_type_id?: string | null
+          status?: string
+          tenant_name?: string
+          tenant_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_occupancies_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancies_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancies_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancies_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_types: {
         Row: {
           available_count: number | null
