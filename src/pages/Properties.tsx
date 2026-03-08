@@ -225,7 +225,7 @@ export default function Properties() {
 
         {/* Search + Filter Toggle */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-          <div className="relative flex-1">
+          <div className="relative flex-1" data-tour="properties-search">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by name, address, or location..."
