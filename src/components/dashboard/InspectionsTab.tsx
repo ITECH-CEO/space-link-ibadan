@@ -64,18 +64,21 @@ export function InspectionsTab() {
 
     // Enrich bookings
     if (bookingsData && bookingsData.length > 0) {
-      const clientIds = [...new Set(bookingsData.map((b: any) => b.client_id))];
+      const clientIds = [...new Set(bookingsData.map((b: any) => b.client_id))] as string[];
       const { data: clients } = await supabase.from("clients").select("id, full_name").in("id", clientIds);
       const clientMap = new Map((clients || []).map((c) => [c.id, c.full_name]));
       const slotMap = new Map(formattedSlots.map((s: Slot) => [s.id, s]));
 
-      setBookings(bookingsData.map((b: any) => ({
-        ...b,
-        client_name: clientMap.get(b.client_id) || "Unknown",
-        property_name: slotMap.get(b.slot_id)?.property_name || "—",
-        slot_date: slotMap.get(b.slot_id)?.slot_date,
-        slot_time: slotMap.get(b.slot_id)?.slot_time,
-      })));
+      setBookings(bookingsData.map((b: any) => {
+        const slot = slotMap.get(b.slot_id);
+        return {
+          ...b,
+          client_name: clientMap.get(b.client_id) || "Unknown",
+          property_name: slot?.property_name || "—",
+          slot_date: slot?.slot_date,
+          slot_time: slot?.slot_time,
+        };
+      }));
     } else {
       setBookings([]);
     }
