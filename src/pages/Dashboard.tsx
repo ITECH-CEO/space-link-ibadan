@@ -27,7 +27,7 @@ import { SponsorsTab } from "@/components/dashboard/SponsorsTab";
 import {
   LayoutDashboard, Users, Building2, Handshake, Banknote, Wrench,
   ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings,
-  LogOut, Moon, Sun, Home, ChevronRight, MessageSquareWarning,
+  LogOut, Moon, Sun, Home, ChevronRight, MessageSquareWarning, Award,
 } from "lucide-react";
 
 const navItems = [
