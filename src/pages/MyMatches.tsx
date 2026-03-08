@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { toast } from "sonner";
-import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, MessageSquare, LayoutGrid } from "lucide-react";
+import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, MessageSquare, LayoutGrid, Heart, CheckCheck, X } from "lucide-react";
 import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
 import { motion } from "framer-motion";
 
@@ -24,6 +24,14 @@ interface RoommateMatchDetail {
   id: string; status: string; compatibility_score: number | null;
   ai_reasoning: string | null; partner_name: string; property_name: string | null;
   partner_user_id?: string;
+  partner_photo: string | null;
+  partner_faculty: string | null;
+  partner_course: string | null;
+  partner_level: string | null;
+  partner_preferences: string[] | null;
+  my_status: "pending" | "accepted" | "rejected";
+  partner_status: "pending" | "accepted" | "rejected";
+  is_client_a: boolean;
 }
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
@@ -40,60 +48,117 @@ export default function MyMatches() {
   const [seekingRoommate, setSeekingRoommate] = useState(false);
   const [swipeView, setSwipeView] = useState(false);
 
-  useEffect(() => {
+  const fetchAll = async () => {
     if (!user) return;
-    const fetchAll = async () => {
-      const { data: client } = await (supabase as any)
-        .from("clients").select("id, seeking_roommate").eq("user_id", user.id).maybeSingle();
-      if (!client) { setLoading(false); return; }
-      setClientId(client.id);
-      setSeekingRoommate(client.seeking_roommate || false);
+    const { data: client } = await (supabase as any)
+      .from("clients").select("id, seeking_roommate").eq("user_id", user.id).maybeSingle();
+    if (!client) { setLoading(false); return; }
+    setClientId(client.id);
+    setSeekingRoommate(client.seeking_roommate || false);
 
-      const { data: propData } = await supabase
-        .from("matches")
-        .select("id, status, compatibility_score, created_at, property_id, properties(property_name, address), room_types(name, price)")
-        .eq("client_id", client.id)
-        .order("compatibility_score", { ascending: false });
+    const { data: propData } = await supabase
+      .from("matches")
+      .select("id, status, compatibility_score, created_at, property_id, properties(property_name, address), room_types(name, price)")
+      .eq("client_id", client.id)
+      .order("compatibility_score", { ascending: false });
 
-      setMatches((propData || []).map((m: any) => ({
-        id: m.id, status: m.status, compatibility_score: m.compatibility_score, created_at: m.created_at,
-        property_name: m.properties?.property_name || "—", property_address: m.properties?.address || "",
-        property_id: m.property_id, room_type_name: m.room_types?.name || null,
-        room_type_price: m.room_types?.price || null,
-      })));
+    setMatches((propData || []).map((m: any) => ({
+      id: m.id, status: m.status, compatibility_score: m.compatibility_score, created_at: m.created_at,
+      property_name: m.properties?.property_name || "—", property_address: m.properties?.address || "",
+      property_id: m.property_id, room_type_name: m.room_types?.name || null,
+      room_type_price: m.room_types?.price || null,
+    })));
 
-      const { data: rmData } = await (supabase as any)
-        .from("roommate_matches")
-        .select("id, status, compatibility_score, ai_reasoning, client_a_id, client_b_id, properties(property_name)")
-        .or(`client_a_id.eq.${client.id},client_b_id.eq.${client.id}`)
-        .order("compatibility_score", { ascending: false });
+    const { data: rmData } = await (supabase as any)
+      .from("roommate_matches")
+      .select("id, status, compatibility_score, ai_reasoning, client_a_id, client_b_id, client_a_status, client_b_status, properties(property_name)")
+      .or(`client_a_id.eq.${client.id},client_b_id.eq.${client.id}`)
+      .order("compatibility_score", { ascending: false });
 
-      if (rmData && rmData.length > 0) {
-        const partnerIds = rmData.map((r: any) => r.client_a_id === client.id ? r.client_b_id : r.client_a_id);
-        const { data: partners } = await supabase.from("clients").select("id, full_name, user_id").in("id", partnerIds);
-        const pMap = new Map((partners || []).map(p => [p.id, { name: p.full_name, user_id: p.user_id }]));
+    if (rmData && rmData.length > 0) {
+      const partnerIds = rmData.map((r: any) => r.client_a_id === client.id ? r.client_b_id : r.client_a_id);
+      const { data: partners } = await supabase
+        .from("clients")
+        .select("id, full_name, user_id, current_photo_url, faculty, course, level, preferences")
+        .in("id", partnerIds);
+      const pMap = new Map((partners || []).map(p => [p.id, p]));
 
-        setRoommateMatches(rmData.map((r: any) => {
-          const partnerId = r.client_a_id === client.id ? r.client_b_id : r.client_a_id;
-          const partner = pMap.get(partnerId);
-          return {
-            id: r.id, status: r.status, compatibility_score: r.compatibility_score,
-            ai_reasoning: r.ai_reasoning, partner_name: partner?.name || "—",
-            property_name: r.properties?.property_name || null,
-            partner_user_id: partner?.user_id,
-          };
-        }));
-      }
-      setLoading(false);
-    };
-    fetchAll();
-  }, [user]);
+      setRoommateMatches(rmData.map((r: any) => {
+        const isClientA = r.client_a_id === client.id;
+        const partnerId = isClientA ? r.client_b_id : r.client_a_id;
+        const partner = pMap.get(partnerId);
+        return {
+          id: r.id, status: r.status, compatibility_score: r.compatibility_score,
+          ai_reasoning: r.ai_reasoning, partner_name: partner?.full_name || "—",
+          property_name: r.properties?.property_name || null,
+          partner_user_id: partner?.user_id,
+          partner_photo: partner?.current_photo_url || null,
+          partner_faculty: partner?.faculty || null,
+          partner_course: partner?.course || null,
+          partner_level: partner?.level || null,
+          partner_preferences: partner?.preferences || null,
+          my_status: isClientA ? r.client_a_status : r.client_b_status,
+          partner_status: isClientA ? r.client_b_status : r.client_a_status,
+          is_client_a: isClientA,
+        };
+      }));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchAll(); }, [user]);
 
   if (authLoading) return null;
   if (!user) return <Navigate to="/auth" replace />;
 
+  const handleSwipeAction = async (matchId: string, action: "accepted" | "rejected") => {
+    const match = roommateMatches.find(m => m.id === matchId);
+    if (!match) return;
+
+    const updateCol = match.is_client_a ? "client_a_status" : "client_b_status";
+    const { error } = await (supabase as any)
+      .from("roommate_matches")
+      .update({ [updateCol]: action })
+      .eq("id", matchId);
+
+    if (error) {
+      toast.error("Failed to save your choice");
+      return;
+    }
+
+    // Check if mutual match
+    if (action === "accepted" && match.partner_status === "accepted") {
+      // Both accepted — update overall status to confirmed
+      await (supabase as any)
+        .from("roommate_matches")
+        .update({ status: "confirmed" })
+        .eq("id", matchId);
+      toast.success(`🎉 It's a match! You and ${match.partner_name} both liked each other!`);
+    } else if (action === "accepted") {
+      toast.success("Liked! Waiting for their response...");
+    } else {
+      toast("Passed");
+    }
+
+    // Update local state
+    setRoommateMatches(prev => prev.map(m => {
+      if (m.id !== matchId) return m;
+      const newMyStatus = action;
+      const newOverallStatus = action === "accepted" && m.partner_status === "accepted" ? "confirmed" : m.status;
+      return { ...m, my_status: newMyStatus, status: newOverallStatus };
+    }));
+  };
+
   const requestRoommateMatch = async () => {
     if (!clientId) { toast.error("Complete your profile first"); return; }
+
+    // Check max 5 active (pending) matches
+    const pendingCount = roommateMatches.filter(m => m.my_status === "pending").length;
+    if (pendingCount >= 5) {
+      toast.error("You have 5 pending matches. Review them first before requesting more.");
+      return;
+    }
+
     setRequesting(true);
     try {
       await (supabase as any).from("clients").update({ seeking_roommate: true }).eq("id", clientId);
@@ -104,7 +169,7 @@ export default function MyMatches() {
       if (res.error) toast.error(res.error.message || "Matching failed");
       else {
         toast.success(res.data?.message || "Roommate match request submitted!");
-        window.location.reload();
+        await fetchAll();
       }
     } catch (err: any) {
       toast.error(err.message || "An error occurred");
@@ -120,11 +185,16 @@ export default function MyMatches() {
   const statusColors: Record<string, string> = {
     pending: "bg-warning/10 text-warning border-warning/20",
     accepted: "bg-success/10 text-success border-success/20",
+    confirmed: "bg-success/10 text-success border-success/20",
     rejected: "bg-destructive/10 text-destructive border-destructive/20",
   };
 
   const scoreClass = (s: number | null) =>
     (s ?? 0) >= 70 ? "text-success" : (s ?? 0) >= 50 ? "text-warning" : "text-muted-foreground";
+
+  // Separate confirmed matches vs pending
+  const confirmedMatches = roommateMatches.filter(m => m.status === "confirmed");
+  const pendingRoommates = roommateMatches.filter(m => m.status !== "confirmed" && m.my_status !== "rejected");
 
   return (
     <div className="min-h-screen bg-background">
@@ -221,7 +291,52 @@ export default function MyMatches() {
                 </CardContent>
               </Card>
 
-              {roommateMatches.length === 0 ? (
+              {/* Confirmed Matches Section */}
+              {confirmedMatches.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="flex items-center gap-2 font-display font-semibold text-sm mb-3 text-success">
+                    <CheckCheck className="h-4 w-4" /> Confirmed Matches ({confirmedMatches.length})
+                  </h3>
+                  <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
+                    {confirmedMatches.map((r) => (
+                      <motion.div key={r.id} variants={fadeUp}>
+                        <Card className="border-success/20 card-elevated">
+                          <CardContent className="p-5">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                {r.partner_photo ? (
+                                  <img src={r.partner_photo} alt={r.partner_name} className="h-12 w-12 rounded-full object-cover border-2 border-success/30" />
+                                ) : (
+                                  <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center border-2 border-success/30">
+                                    <Users className="h-5 w-5 text-success" />
+                                  </div>
+                                )}
+                                <div>
+                                  <h3 className="font-semibold">{r.partner_name}</h3>
+                                  {r.partner_faculty && <p className="text-xs text-muted-foreground">{r.partner_faculty} • {r.partner_course}</p>}
+                                  {r.property_name && <p className="text-xs text-muted-foreground mt-0.5">📍 {r.property_name}</p>}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
+                                <Badge variant="outline" className="bg-success/10 text-success border-success/20">✓ Mutual Match</Badge>
+                              </div>
+                            </div>
+                            {r.partner_user_id && (
+                              <Button onClick={() => messageRoommate(r.partner_user_id!)} variant="outline" size="sm" className="mt-3 w-full">
+                                <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
+                              </Button>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </div>
+              )}
+
+              {/* Pending / Swipeable Matches */}
+              {pendingRoommates.length === 0 && confirmedMatches.length === 0 ? (
                 <Card className="card-elevated border-border/50">
                   <CardContent className="py-12 text-center">
                     <Users className="mx-auto h-16 w-16 text-muted-foreground/20 mb-4" />
@@ -229,52 +344,78 @@ export default function MyMatches() {
                     <p className="text-muted-foreground">Click "Find Roommate" above and make sure your profile has your course and faculty info.</p>
                   </CardContent>
                 </Card>
-              ) : swipeView ? (
+              ) : pendingRoommates.length > 0 && swipeView ? (
                 <RoommateSwipeCard
-                  matches={roommateMatches}
+                  matches={pendingRoommates}
                   onMessage={(userId) => messageRoommate(userId)}
                   onBack={() => setSwipeView(false)}
+                  onSwipeAction={handleSwipeAction}
                 />
-              ) : (
+              ) : pendingRoommates.length > 0 ? (
                 <>
-                  <div className="flex justify-end mb-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-display font-semibold text-sm text-muted-foreground">
+                      Pending ({pendingRoommates.filter(m => m.my_status === "pending").length} to review)
+                    </h3>
                     <Button variant="outline" size="sm" onClick={() => setSwipeView(true)} className="text-sm">
                       <LayoutGrid className="mr-2 h-4 w-4" /> Swipe View
                     </Button>
                   </div>
-                  <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-4">
-                    {roommateMatches.map((r) => (
+                  <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
+                    {pendingRoommates.map((r) => (
                       <motion.div key={r.id} variants={fadeUp}>
                         <Card className="transition-all hover:shadow-md card-elevated border-border/50">
                           <CardContent className="p-5">
                             <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Users className="h-4 w-4 text-primary" />
+                              <div className="flex items-center gap-3">
+                                {r.partner_photo ? (
+                                  <img src={r.partner_photo} alt={r.partner_name} className="h-10 w-10 rounded-full object-cover" />
+                                ) : (
+                                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                  </div>
+                                )}
+                                <div className="flex-1">
                                   <h3 className="font-semibold">{r.partner_name}</h3>
+                                  {r.partner_faculty && <p className="text-xs text-muted-foreground">{r.partner_faculty}{r.partner_course ? ` • ${r.partner_course}` : ""}</p>}
+                                  {r.property_name && (
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      <Building2 className="inline h-3 w-3 mr-1" />Shared interest: {r.property_name}
+                                    </p>
+                                  )}
                                 </div>
-                                {r.property_name && (
-                                  <p className="text-sm text-muted-foreground mb-1">
-                                    <Building2 className="inline h-3 w-3 mr-1" />Shared interest: {r.property_name}
-                                  </p>
-                                )}
-                                {r.ai_reasoning && (
-                                  <p className="text-xs text-muted-foreground mt-2 italic">"{r.ai_reasoning}"</p>
-                                )}
                               </div>
                               <div className="flex flex-col items-end gap-2">
                                 <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
-                                <Badge variant="outline" className={statusColors[r.status] || ""}>{r.status}</Badge>
+                                <Badge variant="outline" className={statusColors[r.my_status] || ""}>
+                                  {r.my_status === "accepted" ? "You liked" : r.my_status}
+                                </Badge>
                               </div>
                             </div>
-                            
-                            {r.partner_user_id && (
-                              <Button
-                                onClick={() => messageRoommate(r.partner_user_id!)}
-                                variant="outline"
-                                size="sm"
-                                className="mt-3 w-full"
-                              >
+
+                            {/* Action buttons for pending */}
+                            {r.my_status === "pending" && (
+                              <div className="flex gap-2 mt-3">
+                                <Button
+                                  onClick={() => handleSwipeAction(r.id, "rejected")}
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1 border-destructive/30 text-destructive hover:bg-destructive/10"
+                                >
+                                  <X className="mr-1 h-4 w-4" /> Pass
+                                </Button>
+                                <Button
+                                  onClick={() => handleSwipeAction(r.id, "accepted")}
+                                  size="sm"
+                                  className="flex-1 bg-success text-success-foreground hover:bg-success/90"
+                                >
+                                  <Heart className="mr-1 h-4 w-4" /> Like
+                                </Button>
+                              </div>
+                            )}
+
+                            {r.my_status === "accepted" && r.partner_user_id && (
+                              <Button onClick={() => messageRoommate(r.partner_user_id!)} variant="outline" size="sm" className="mt-3 w-full">
                                 <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
                               </Button>
                             )}
@@ -284,7 +425,7 @@ export default function MyMatches() {
                     ))}
                   </motion.div>
                 </>
-              )}
+              ) : null}
             </TabsContent>
           </Tabs>
         )}

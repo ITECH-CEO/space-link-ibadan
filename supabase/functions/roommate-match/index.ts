@@ -55,7 +55,7 @@ function computeBaseScore(a: Client, b: Client): number {
     if (a.course.toLowerCase() === b.course.toLowerCase()) {
       score += 15;
     } else if (a.faculty && b.faculty && a.faculty.toLowerCase() === b.faculty.toLowerCase()) {
-      score += 5; // Same faculty, different course
+      score += 5;
     }
   }
 
@@ -144,7 +144,6 @@ serve(async (req) => {
     // Check if admin OR the requesting client themselves
     const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: user.id });
     
-    // If not admin, verify they're requesting for themselves
     if (!isAdmin && targetClientId) {
       const { data: clientCheck } = await supabase
         .from("clients")
@@ -163,8 +162,28 @@ serve(async (req) => {
       });
     }
 
-    // Fetch clients seeking roommates (or all approved if admin)
-    let clientQuery = supabase
+    // Enforce max 5 active (pending) matches per client
+    if (targetClientId) {
+      const { data: activeMatches } = await supabase
+        .from("roommate_matches")
+        .select("id, client_a_id, client_b_id, client_a_status, client_b_status")
+        .or(`client_a_id.eq.${targetClientId},client_b_id.eq.${targetClientId}`);
+
+      const pendingCount = (activeMatches || []).filter(m => {
+        const myStatus = m.client_a_id === targetClientId ? m.client_a_status : m.client_b_status;
+        return myStatus === "pending";
+      }).length;
+
+      if (pendingCount >= 5) {
+        return new Response(
+          JSON.stringify({ matches_created: 0, message: "You already have 5 pending matches. Review them before requesting more." }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Fetch clients seeking roommates
+    const clientQuery = supabase
       .from("clients")
       .select("id, full_name, budget_min, budget_max, preferences, verification_status, course, faculty, level, gender")
       .eq("seeking_roommate", true);
@@ -208,6 +227,21 @@ serve(async (req) => {
       ? allClients.filter(c => c.id === targetClientId)
       : allClients;
 
+    // Calculate how many more matches this client can receive
+    let maxNewMatches = 5;
+    if (targetClientId) {
+      const { data: activeMatches } = await supabase
+        .from("roommate_matches")
+        .select("id, client_a_id, client_b_id, client_a_status, client_b_status")
+        .or(`client_a_id.eq.${targetClientId},client_b_id.eq.${targetClientId}`);
+
+      const pendingCount = (activeMatches || []).filter(m => {
+        const myStatus = m.client_a_id === targetClientId ? m.client_a_status : m.client_b_status;
+        return myStatus === "pending";
+      }).length;
+      maxNewMatches = Math.max(0, 5 - pendingCount);
+    }
+
     for (const clientA of clients) {
       for (const clientB of allClients) {
         if (clientA.id >= clientB.id) continue;
@@ -241,13 +275,14 @@ serve(async (req) => {
       baseScore: computeBaseScore(c.a, c.b) + (c.shared_property_id ? 10 : 0),
     }));
     scored.sort((a, b) => b.baseScore - a.baseScore);
-    const topCandidates = scored.filter(c => c.baseScore >= 20).slice(0, 20);
+    const topCandidates = scored.filter(c => c.baseScore >= 20).slice(0, maxNewMatches);
 
-    // AI-enhance top 10
+    // AI-enhance top matches
     const newMatches: Array<{
       client_a_id: string; client_b_id: string;
       property_id: string | null; room_type_id: string | null;
       compatibility_score: number; ai_reasoning: string; status: string;
+      client_a_status: string; client_b_status: string;
     }> = [];
 
     for (const c of topCandidates) {
@@ -267,6 +302,7 @@ serve(async (req) => {
         client_a_id: c.a.id, client_b_id: c.b.id,
         property_id: c.shared_property_id, room_type_id: c.shared_room_type_id,
         compatibility_score: Math.min(100, score), ai_reasoning: reasoning, status: "pending",
+        client_a_status: "pending", client_b_status: "pending",
       });
     }
 
@@ -283,7 +319,7 @@ serve(async (req) => {
       JSON.stringify({
         matches_created: newMatches.length,
         message: newMatches.length > 0
-          ? `Found ${newMatches.length} compatible roommate(s)! Check your matches.`
+          ? `Found ${newMatches.length} compatible roommate(s)! Swipe to review them.`
           : "No new roommate matches found. More students need to enable roommate matching.",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
