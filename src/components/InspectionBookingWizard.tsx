@@ -251,6 +251,8 @@ export function InspectionBookingWizard({
             </div>
           </div>
 
+          <PaymentDetails label="Transfer inspection fee to" />
+
           <div className="flex justify-between pt-2">
             <Button variant="ghost" onClick={goBack}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
