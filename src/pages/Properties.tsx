@@ -235,7 +235,7 @@ export default function Properties() {
               maxLength={100}
             />
           </div>
-          <Button
+          <Button data-tour="properties-filters"
             variant={showFilters ? "default" : "outline"}
             onClick={() => setShowFilters(!showFilters)}
             className={showFilters ? "gradient-primary text-primary-foreground" : ""}
