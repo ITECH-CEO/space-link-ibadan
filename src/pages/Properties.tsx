@@ -13,13 +13,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, MapPin, Users, Search, Banknote, SlidersHorizontal, X, Heart, Map, List, Footprints, Navigation, Star } from "lucide-react";
+import { Building2, MapPin, Users, Search, Banknote, SlidersHorizontal, X, Heart, Map, List, Footprints, Navigation, Star, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import type { Tables } from "@/integrations/supabase/types";
 import { PropertyMap } from "@/components/PropertyMap";
 import { PropertyCarousel } from "@/components/PropertyCarousel";
 import { PropertiesTour } from "@/components/tours/PropertiesTour";
+import { SavedSearchManager } from "@/components/SavedSearchManager";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
