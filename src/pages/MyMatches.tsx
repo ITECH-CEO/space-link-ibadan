@@ -15,6 +15,7 @@ import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
 import { motion } from "framer-motion";
 import { MatchesTour } from "@/components/tours/MatchesTour";
 import { ClientRentPayments } from "@/components/ClientRentPayments";
+import { ClientComplaintForm } from "@/components/ClientComplaintForm";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
