@@ -52,6 +52,7 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
   const [roomTypes, setRoomTypes] = useState<RoomTypeInput[]>([emptyRoomType()]);
   const [photos, setPhotos] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
+  const [panoramas, setPanoramas] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
 
