@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { PropertyForm } from "@/components/forms/PropertyForm";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, CheckCircle, XCircle, Pencil, Eye, Trash2 } from "lucide-react";
+import { Plus, CheckCircle, XCircle, Pencil, Trash2, Search, Upload, X, Image } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 export function PropertiesTab() {
@@ -24,6 +24,10 @@ export function PropertiesTab() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [newPhotos, setNewPhotos] = useState<File[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
@@ -34,8 +38,8 @@ export function PropertiesTab() {
   };
 
   const toggleAll = () => {
-    if (selected.size === properties.length) setSelected(new Set());
-    else setSelected(new Set(properties.map(p => p.id)));
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map(p => p.id)));
   };
 
   const bulkUpdateStatus = async (status: "approved" | "rejected") => {
@@ -67,6 +71,15 @@ export function PropertiesTab() {
     else { toast.success("Status updated"); fetchProperties(); }
   };
 
+  const filtered = properties.filter(p => {
+    const matchesSearch = !searchQuery ||
+      p.property_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.landlord_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.address.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || p.verification_status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   const openEdit = (p: Tables<"properties">) => {
     setEditProperty(p);
     setEditForm({
@@ -83,13 +96,49 @@ export function PropertiesTab() {
       special_notes: p.special_notes || "",
       admin_notes: p.admin_notes || "",
       verification_status: p.verification_status,
+      existingPhotos: p.photos || [],
     });
+    setNewPhotos([]);
     setEditDialogOpen(true);
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const valid = files.filter(f => f.type.startsWith("image/") && f.size <= 5 * 1024 * 1024);
+    if (valid.length !== files.length) toast.error("Some files skipped (must be images under 5MB)");
+    setNewPhotos(prev => [...prev, ...valid].slice(0, 10));
+  };
+
+  const removeExistingPhoto = (url: string) => {
+    setEditForm((prev: any) => ({
+      ...prev,
+      existingPhotos: prev.existingPhotos.filter((p: string) => p !== url),
+    }));
   };
 
   const saveEdit = async () => {
     if (!editProperty) return;
     setSaving(true);
+
+    let uploadedUrls: string[] = [];
+    if (newPhotos.length > 0) {
+      setUploadingPhotos(true);
+      for (const file of newPhotos) {
+        const ext = file.name.split(".").pop();
+        const path = `photos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error } = await supabase.storage.from("property-media").upload(path, file);
+        if (error) {
+          toast.error(`Upload failed: ${file.name}`);
+          continue;
+        }
+        const { data: urlData } = supabase.storage.from("property-media").getPublicUrl(path);
+        uploadedUrls.push(urlData.publicUrl);
+      }
+      setUploadingPhotos(false);
+    }
+
+    const allPhotos = [...(editForm.existingPhotos || []), ...uploadedUrls];
+
     const { error } = await supabase
       .from("properties")
       .update({
@@ -106,6 +155,7 @@ export function PropertiesTab() {
         special_notes: editForm.special_notes || null,
         admin_notes: editForm.admin_notes || null,
         verification_status: editForm.verification_status,
+        photos: allPhotos,
       })
       .eq("id", editProperty.id);
     if (error) toast.error(error.message);
@@ -113,6 +163,7 @@ export function PropertiesTab() {
       toast.success("Property updated successfully");
       setEditDialogOpen(false);
       setEditProperty(null);
+      setNewPhotos([]);
       fetchProperties();
     }
     setSaving(false);
@@ -127,9 +178,9 @@ export function PropertiesTab() {
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex-row items-center justify-between flex-wrap gap-2">
-          <CardTitle>Properties</CardTitle>
+      <Card className="card-elevated">
+        <CardHeader className="flex-row items-center justify-between flex-wrap gap-3">
+          <CardTitle className="font-display">Properties ({properties.length})</CardTitle>
           <div className="flex items-center gap-2">
             {selected.size > 0 && (
               <>
@@ -155,18 +206,44 @@ export function PropertiesTab() {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Search & Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search properties, landlords, addresses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {loading ? (
             <p className="text-muted-foreground">Loading...</p>
-          ) : properties.length === 0 ? (
-            <p className="text-muted-foreground">No properties listed yet.</p>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">{searchQuery || statusFilter !== "all" ? "No properties match your filters." : "No properties listed yet."}</p>
+            </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/30">
                     <TableHead className="w-10">
                       <Checkbox
-                        checked={selected.size === properties.length && properties.length > 0}
+                        checked={selected.size === filtered.length && filtered.length > 0}
                         onCheckedChange={toggleAll}
                       />
                     </TableHead>
@@ -180,16 +257,27 @@ export function PropertiesTab() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {properties.map((p) => (
-                    <TableRow key={p.id} data-state={selected.has(p.id) ? "selected" : undefined}>
+                  {filtered.map((p) => (
+                    <TableRow key={p.id} data-state={selected.has(p.id) ? "selected" : undefined} className="hover:bg-muted/20">
                       <TableCell>
                         <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
                       </TableCell>
-                      <TableCell className="font-medium">{p.property_name}</TableCell>
-                      <TableCell>{p.landlord_name}</TableCell>
-                      <TableCell className="capitalize">{p.property_type}</TableCell>
-                      <TableCell>{p.available_rooms}/{p.total_rooms}</TableCell>
-                      <TableCell>{p.address}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          {p.photos && p.photos.length > 0 ? (
+                            <img src={p.photos[0]} alt="" className="h-10 w-10 rounded-lg object-cover border" />
+                          ) : (
+                            <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                              <Image className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                          <span className="font-medium">{p.property_name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{p.landlord_name}</TableCell>
+                      <TableCell className="capitalize text-sm">{p.property_type}</TableCell>
+                      <TableCell className="text-sm">{p.available_rooms}/{p.total_rooms}</TableCell>
+                      <TableCell className="text-sm max-w-[150px] truncate">{p.address}</TableCell>
                       <TableCell><VerificationBadge status={p.verification_status} /></TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -214,6 +302,9 @@ export function PropertiesTab() {
                 </TableBody>
               </Table>
             </div>
+          )}
+          {filtered.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-3">Showing {filtered.length} of {properties.length} properties</p>
           )}
         </CardContent>
       </Card>
@@ -281,6 +372,48 @@ export function PropertiesTab() {
               </div>
             </div>
 
+            {/* Photo Management */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2"><Image className="h-4 w-4" /> Photos</Label>
+              
+              {/* Existing Photos */}
+              {editForm.existingPhotos && editForm.existingPhotos.length > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {editForm.existingPhotos.map((url: string, i: number) => (
+                    <div key={i} className="relative group">
+                      <img src={url} alt={`Photo ${i + 1}`} className="h-20 w-full rounded-lg object-cover border" />
+                      <button
+                        type="button"
+                        onClick={() => removeExistingPhoto(url)}
+                        className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload New */}
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-input p-3 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                <Upload className="h-4 w-4" />
+                Add more photos
+                <input type="file" accept="image/*" multiple onChange={handlePhotoSelect} className="hidden" />
+              </label>
+              {newPhotos.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {newPhotos.map((f, i) => (
+                    <div key={i} className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs">
+                      <span className="truncate max-w-[80px]">{f.name}</span>
+                      <button type="button" onClick={() => setNewPhotos(prev => prev.filter((_, j) => j !== i))}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label>Verification Status</Label>
               <Select value={editForm.verification_status} onValueChange={(v) => setEditForm({ ...editForm, verification_status: v })}>
@@ -305,8 +438,8 @@ export function PropertiesTab() {
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-              <Button onClick={saveEdit} disabled={saving} className="gradient-primary text-primary-foreground">
-                {saving ? "Saving..." : "Save Changes"}
+              <Button onClick={saveEdit} disabled={saving || uploadingPhotos} className="gradient-primary text-primary-foreground">
+                {uploadingPhotos ? "Uploading photos..." : saving ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </div>
