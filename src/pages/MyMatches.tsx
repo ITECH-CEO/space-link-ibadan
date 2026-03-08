@@ -438,17 +438,34 @@ export default function MyMatches() {
           </Tabs>
         )}
 
-        {/* Complaint Button */}
-        {matches.filter(m => m.status === "accepted").length > 0 && (
+        {/* Platform Complaint — any registered client */}
+        {clientId && user && (
           <div className="mt-6 flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card">
             <div>
-              <h3 className="font-semibold text-sm">Having an issue with your accommodation?</h3>
-              <p className="text-xs text-muted-foreground">Report maintenance problems to your landlord</p>
+              <h3 className="font-semibold text-sm">Have a question or complaint?</h3>
+              <p className="text-xs text-muted-foreground">Contact support about any platform issue or inquiry</p>
+            </div>
+            <ClientPlatformComplaint
+              userId={user.id}
+              clientName={clientName}
+              clientEmail={user.email}
+              clientPhone={clientPhone}
+            />
+          </div>
+        )}
+
+        {/* Maintenance Complaint — tenants with occupied rooms only */}
+        {matches.filter(m => m.status === "accepted").length > 0 && user && (
+          <div className="mt-4 flex items-center justify-between p-4 rounded-xl border border-warning/20 bg-card">
+            <div>
+              <h3 className="font-semibold text-sm">Having a maintenance issue?</h3>
+              <p className="text-xs text-muted-foreground">Report problems with your rented room to the landlord</p>
             </div>
             <ClientComplaintForm
               matchedProperties={matches.filter(m => m.status === "accepted").map(m => ({ property_id: m.property_id, property_name: m.property_name }))}
               clientName={clientName}
               clientPhone={clientPhone}
+              userId={user.id}
             />
           </div>
         )}
