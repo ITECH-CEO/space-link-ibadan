@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { PropertyForm } from "@/components/forms/PropertyForm";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, CheckCircle, XCircle, Pencil, Trash2, Search, Upload, X, Image } from "lucide-react";
+import { Plus, CheckCircle, XCircle, Pencil, Trash2, Search, Upload, X, Image, FileSpreadsheet, Download } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 export function PropertiesTab() {
