@@ -14,6 +14,7 @@ import { FileUpload } from "@/components/FileUpload";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { toast } from "sonner";
 import { Shield, FileText, GraduationCap, Users } from "lucide-react";
+import { ReferralCard } from "@/components/ReferralCard";
 
 const preferenceOptions = [
   "Quiet", "Non-Smoker", "Final Year", "Early Riser", "Night Owl",
