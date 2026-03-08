@@ -59,9 +59,18 @@ export function PropertiesTab() {
     }
   };
 
+  const [propertyAdminNotes, setPropertyAdminNotes] = useState<Record<string, string>>({});
+
   const fetchProperties = async () => {
     const { data } = await supabase.from("properties").select("*").order("created_at", { ascending: false });
     setProperties(data || []);
+    
+    // Fetch admin notes from secure table
+    const { data: notesData } = await (supabase as any).from("property_admin_notes").select("property_id, notes");
+    const notesMap: Record<string, string> = {};
+    (notesData || []).forEach((n: any) => { if (n.notes) notesMap[n.property_id] = n.notes; });
+    setPropertyAdminNotes(notesMap);
+    
     setLoading(false);
   };
 
