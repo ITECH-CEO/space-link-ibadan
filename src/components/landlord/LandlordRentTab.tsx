@@ -228,6 +228,10 @@ export function LandlordRentTab() {
             </Button>
           ))}
         </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={exportCsv}>
+            <Download className="mr-1 h-4 w-4" />Export CSV
+          </Button>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm"><Plus className="mr-2 h-4 w-4" />Record Payment</Button>
