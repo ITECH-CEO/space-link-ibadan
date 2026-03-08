@@ -1,10 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const ALLOWED_ORIGINS = [
+  "https://unispace-ng.lovable.app",
+  "https://id-preview--993ca64c-be15-480a-bf68-f31267975636.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
 
 interface Client {
   id: string;
@@ -41,7 +52,6 @@ function computeScore(client: Client, property: Property, roomType?: RoomType): 
   const budgetMin = client.budget_min ?? 0;
   const budgetMax = client.budget_max ?? Infinity;
 
-  // Budget fit (0-40 points)
   if (price > 0 && budgetMax < Infinity) {
     if (price >= budgetMin && price <= budgetMax) {
       const mid = (budgetMin + budgetMax) / 2;
@@ -54,7 +64,6 @@ function computeScore(client: Client, property: Property, roomType?: RoomType): 
     score += 20;
   }
 
-  // Preference/tag overlap (0-40 points)
   const clientTags = client.preferences ?? [];
   const propertyTags = [
     ...(property.facilities ?? []),
@@ -68,7 +77,6 @@ function computeScore(client: Client, property: Property, roomType?: RoomType): 
     score += 15;
   }
 
-  // Verification bonus (0-20 points)
   if (client.verification_status === "approved") score += 10;
   if (property.verification_status === "approved") score += 10;
 
@@ -76,6 +84,7 @@ function computeScore(client: Client, property: Property, roomType?: RoomType): 
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -230,7 +239,7 @@ serve(async (req) => {
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

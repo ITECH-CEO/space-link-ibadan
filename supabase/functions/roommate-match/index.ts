@@ -1,10 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const ALLOWED_ORIGINS = [
+  "https://unispace-ng.lovable.app",
+  "https://id-preview--993ca64c-be15-480a-bf68-f31267975636.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
 
 interface Client {
   id: string;
@@ -21,8 +32,6 @@ interface Client {
 
 function computeBaseScore(a: Client, b: Client): number {
   let score = 0;
-
-  // Budget overlap (0-25 points)
   const aMin = a.budget_min ?? 0, aMax = a.budget_max ?? Infinity;
   const bMin = b.budget_min ?? 0, bMax = b.budget_max ?? Infinity;
   const overlapStart = Math.max(aMin, bMin);
@@ -32,8 +41,6 @@ function computeBaseScore(a: Client, b: Client): number {
     const totalRange = Math.max(aMax, bMax) - Math.min(aMin, bMin) || 1;
     score += Math.round(25 * Math.min(1, overlapRange / totalRange));
   }
-
-  // Preference overlap (0-20 points)
   const aTags = a.preferences ?? [];
   const bTags = b.preferences ?? [];
   if (aTags.length > 0 && bTags.length > 0) {
@@ -44,30 +51,14 @@ function computeBaseScore(a: Client, b: Client): number {
   } else {
     score += 5;
   }
-
-  // Same faculty (0-20 points)
-  if (a.faculty && b.faculty && a.faculty.toLowerCase() === b.faculty.toLowerCase()) {
-    score += 20;
-  }
-
-  // Same or related course (0-15 points)
+  if (a.faculty && b.faculty && a.faculty.toLowerCase() === b.faculty.toLowerCase()) score += 20;
   if (a.course && b.course) {
-    if (a.course.toLowerCase() === b.course.toLowerCase()) {
-      score += 15;
-    } else if (a.faculty && b.faculty && a.faculty.toLowerCase() === b.faculty.toLowerCase()) {
-      score += 5;
-    }
+    if (a.course.toLowerCase() === b.course.toLowerCase()) score += 15;
+    else if (a.faculty && b.faculty && a.faculty.toLowerCase() === b.faculty.toLowerCase()) score += 5;
   }
-
-  // Verification bonus (0-10 points)
   if (a.verification_status === "approved") score += 5;
   if (b.verification_status === "approved") score += 5;
-
-  // Same level bonus (0-10 points)
-  if (a.level && b.level && a.level === b.level) {
-    score += 10;
-  }
-
+  if (a.level && b.level && a.level === b.level) score += 10;
   return Math.min(100, score);
 }
 
@@ -113,6 +104,7 @@ Respond with ONLY valid JSON (no markdown): {"score": <adjusted 0-100>, "reasoni
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -123,7 +115,6 @@ serve(async (req) => {
     const lovableKey = Deno.env.get("LOVABLE_API_KEY") ?? "";
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -141,7 +132,6 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const targetClientId = body.client_id;
 
-    // Check if admin OR the requesting client themselves
     const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: user.id });
     
     if (!isAdmin && targetClientId) {
@@ -162,7 +152,6 @@ serve(async (req) => {
       });
     }
 
-    // Enforce max 5 active (pending) matches per client
     if (targetClientId) {
       const { data: activeMatches } = await supabase
         .from("roommate_matches")
@@ -182,7 +171,6 @@ serve(async (req) => {
       }
     }
 
-    // Fetch clients seeking roommates
     const clientQuery = supabase
       .from("clients")
       .select("id, full_name, budget_min, budget_max, preferences, verification_status, course, faculty, level, gender")
@@ -196,7 +184,6 @@ serve(async (req) => {
       );
     }
 
-    // Get existing roommate matches to avoid duplicates
     const { data: existing } = await supabase
       .from("roommate_matches")
       .select("client_a_id, client_b_id");
@@ -204,7 +191,6 @@ serve(async (req) => {
       (existing || []).map(m => [m.client_a_id, m.client_b_id].sort().join("-"))
     );
 
-    // Check for shared property interest
     const { data: propertyMatches } = await supabase
       .from("matches")
       .select("client_id, property_id, room_type_id")
@@ -216,7 +202,6 @@ serve(async (req) => {
       clientPropertyMap.get(pm.client_id)!.push({ property_id: pm.property_id, room_type_id: pm.room_type_id });
     }
 
-    // Generate candidate pairs
     const candidates: Array<{
       a: Client; b: Client;
       shared_property_id: string | null;
@@ -227,7 +212,6 @@ serve(async (req) => {
       ? allClients.filter(c => c.id === targetClientId)
       : allClients;
 
-    // Calculate how many more matches this client can receive
     let maxNewMatches = 5;
     if (targetClientId) {
       const { data: activeMatches } = await supabase
@@ -245,8 +229,6 @@ serve(async (req) => {
     for (const clientA of clients) {
       for (const clientB of allClients) {
         if (clientA.id >= clientB.id) continue;
-
-        // HARD RULE: Same gender only
         if (!clientA.gender || !clientB.gender || clientA.gender.toLowerCase() !== clientB.gender.toLowerCase()) continue;
 
         const key = [clientA.id, clientB.id].sort().join("-");
@@ -269,7 +251,6 @@ serve(async (req) => {
       }
     }
 
-    // Score and filter
     const scored = candidates.map(c => ({
       ...c,
       baseScore: computeBaseScore(c.a, c.b) + (c.shared_property_id ? 10 : 0),
@@ -277,7 +258,6 @@ serve(async (req) => {
     scored.sort((a, b) => b.baseScore - a.baseScore);
     const topCandidates = scored.filter(c => c.baseScore >= 20).slice(0, maxNewMatches);
 
-    // AI-enhance top matches
     const newMatches: Array<{
       client_a_id: string; client_b_id: string;
       property_id: string | null; room_type_id: string | null;
@@ -327,7 +307,7 @@ serve(async (req) => {
   } catch (err) {
     console.error("roommate-match error:", err);
     return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

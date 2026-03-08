@@ -1,12 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = [
+  "https://unispace-ng.lovable.app",
+  "https://id-preview--993ca64c-be15-480a-bf68-f31267975636.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -19,14 +31,12 @@ serve(async (req) => {
     const today = new Date().toISOString().split("T")[0];
     const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-    // Find overdue payments
     const { data: overdue } = await supabase
       .from("rent_payments")
       .select("*, properties(property_name, owner_user_id)")
       .eq("status", "pending")
       .lt("due_date", today);
 
-    // Mark overdue
     if (overdue && overdue.length > 0) {
       const overdueIds = overdue.map((p: any) => p.id);
       await supabase
@@ -34,7 +44,6 @@ serve(async (req) => {
         .update({ status: "overdue" })
         .in("id", overdueIds);
 
-      // Notify landlords about overdue payments
       const notifications: any[] = [];
       const notifiedLandlords = new Set<string>();
 
@@ -58,7 +67,6 @@ serve(async (req) => {
       }
     }
 
-    // Find upcoming payments (due in 3 days)
     const { data: upcoming } = await supabase
       .from("rent_payments")
       .select("*, properties(property_name, owner_user_id)")
@@ -97,7 +105,7 @@ serve(async (req) => {
   } catch (error) {
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
 });

@@ -59,9 +59,18 @@ export function PropertiesTab() {
     }
   };
 
+  const [propertyAdminNotes, setPropertyAdminNotes] = useState<Record<string, string>>({});
+
   const fetchProperties = async () => {
     const { data } = await supabase.from("properties").select("*").order("created_at", { ascending: false });
     setProperties(data || []);
+    
+    // Fetch admin notes from secure table
+    const { data: notesData } = await (supabase as any).from("property_admin_notes").select("property_id, notes");
+    const notesMap: Record<string, string> = {};
+    (notesData || []).forEach((n: any) => { if (n.notes) notesMap[n.property_id] = n.notes; });
+    setPropertyAdminNotes(notesMap);
+    
     setLoading(false);
   };
 
@@ -96,7 +105,7 @@ export function PropertiesTab() {
       available_rooms: p.available_rooms ?? 0,
       proximity_to_campus: p.proximity_to_campus || "",
       special_notes: p.special_notes || "",
-      admin_notes: p.admin_notes || "",
+      admin_notes: propertyAdminNotes[p.id] || "",
       verification_status: p.verification_status,
       existingPhotos: p.photos || [],
     });
@@ -155,11 +164,20 @@ export function PropertiesTab() {
         available_rooms: Number(editForm.available_rooms),
         proximity_to_campus: editForm.proximity_to_campus || null,
         special_notes: editForm.special_notes || null,
-        admin_notes: editForm.admin_notes || null,
         verification_status: editForm.verification_status,
         photos: allPhotos,
       })
       .eq("id", editProperty.id);
+
+    // Save admin notes to separate secure table
+    if (editForm.admin_notes !== undefined) {
+      await (supabase as any).from("property_admin_notes").upsert({
+        property_id: editProperty.id,
+        notes: editForm.admin_notes || null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "property_id" });
+    }
+
     if (error) toast.error(error.message);
     else {
       toast.success("Property updated successfully");

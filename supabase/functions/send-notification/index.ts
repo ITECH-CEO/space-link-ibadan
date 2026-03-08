@@ -1,12 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  "https://unispace-ng.lovable.app",
+  "https://id-preview--993ca64c-be15-480a-bf68-f31267975636.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -19,7 +31,6 @@ serve(async (req) => {
 
     const { type, user_id, data } = await req.json();
 
-    // Get user's profile for their name
     const { data: profile } = await supabaseClient
       .from("profiles")
       .select("full_name")
@@ -28,7 +39,6 @@ serve(async (req) => {
 
     const userName = profile?.full_name || "User";
 
-    // Create in-app notification based on type
     let notification = { title: "", message: "", notifType: "info", link: "" };
 
     switch (type) {
@@ -73,7 +83,6 @@ serve(async (req) => {
         };
     }
 
-    // Insert notification
     const { error } = await supabaseClient.from("notifications").insert({
       user_id,
       title: notification.title,
@@ -90,7 +99,7 @@ serve(async (req) => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });
