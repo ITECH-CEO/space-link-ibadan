@@ -56,10 +56,12 @@ export default function MyMatches() {
   const fetchAll = async () => {
     if (!user) return;
     const { data: client } = await (supabase as any)
-      .from("clients").select("id, seeking_roommate").eq("user_id", user.id).maybeSingle();
+      .from("clients").select("id, seeking_roommate, full_name, phone").eq("user_id", user.id).maybeSingle();
     if (!client) { setLoading(false); return; }
     setClientId(client.id);
     setSeekingRoommate(client.seeking_roommate || false);
+    setClientName(client.full_name || "");
+    setClientPhone(client.phone || null);
 
     const { data: propData } = await supabase
       .from("matches")
