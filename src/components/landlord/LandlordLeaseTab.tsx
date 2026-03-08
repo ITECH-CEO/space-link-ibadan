@@ -323,8 +323,21 @@ export function LandlordLeaseTab() {
                           {l.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="flex gap-1">
                         <Button size="sm" variant="ghost" onClick={() => setPreviewLease(l)}><Eye className="h-4 w-4" /></Button>
+                        {l.access_token && (
+                          <Button size="sm" variant="ghost" onClick={() => {
+                            const url = `${window.location.origin}/lease?token=${l.access_token}`;
+                            navigator.clipboard.writeText(url);
+                            toast.success("Lease link copied! Share it with your tenant.");
+                            // Also mark as sent
+                            if (l.status === "draft") {
+                              supabase.from("lease_agreements").update({ status: "sent" }).eq("id", l.id).then(() => fetchData());
+                            }
+                          }}>
+                            <Share2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

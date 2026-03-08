@@ -250,6 +250,16 @@ export default function Properties() {
               </Badge>
             )}
           </Button>
+          {user && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon"><Bell className="h-4 w-4" /></Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+                <SavedSearchManager />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* Expanded Filters */}

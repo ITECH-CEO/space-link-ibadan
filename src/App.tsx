@@ -45,6 +45,7 @@ const App = () => (
             <Route path="/landlord/register" element={<LandlordOnboarding />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/support" element={<Support />} />
+            <Route path="/lease" element={<LeaseView />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
