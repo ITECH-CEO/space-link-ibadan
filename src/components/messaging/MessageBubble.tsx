@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, CheckCheck, Reply, Smile, FileText, Download, X } from "lucide-react";
+import { Check, CheckCheck, Reply, Smile, FileText, Download } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 
 export interface MessageReaction {
