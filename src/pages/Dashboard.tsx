@@ -20,8 +20,9 @@ import { InspectionsTab } from "@/components/dashboard/InspectionsTab";
 import { FeesTab } from "@/components/dashboard/FeesTab";
 import { SettingsTab } from "@/components/dashboard/SettingsTab";
 import { RentTrackingTab } from "@/components/dashboard/RentTrackingTab";
+import { ComplaintsTab } from "@/components/dashboard/ComplaintsTab";
 import {
-  LayoutDashboard, Users, Building2, Handshake, Banknote,
+  LayoutDashboard, Users, Building2, Handshake, Banknote, Wrench,
   ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings,
   LogOut, Moon, Sun, Home, ChevronRight,
 } from "lucide-react";
