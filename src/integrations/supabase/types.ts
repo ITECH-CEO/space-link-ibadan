@@ -177,6 +177,95 @@ export type Database = {
         }
         Relationships: []
       }
+      inspection_bookings: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          property_id: string
+          slot_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_id: string
+          slot_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_id?: string
+          slot_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_bookings_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_slots: {
+        Row: {
+          created_at: string
+          created_by: string
+          current_bookings: number
+          id: string
+          max_bookings: number
+          property_id: string
+          slot_date: string
+          slot_time: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          current_bookings?: number
+          id?: string
+          max_bookings?: number
+          property_id: string
+          slot_date: string
+          slot_time: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          current_bookings?: number
+          id?: string
+          max_bookings?: number
+          property_id?: string
+          slot_date?: string
+          slot_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_slots_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_requests: {
         Row: {
           created_at: string

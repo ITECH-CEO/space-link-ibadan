@@ -8,18 +8,36 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Users, Phone, Mail, ArrowLeft, DollarSign, Building2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { toast } from "sonner";
+import { MapPin, Users, Phone, Mail, ArrowLeft, DollarSign, Building2, CalendarDays, Clock, CheckCircle } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
 }
 
+interface InspectionSlot {
+  id: string;
+  slot_date: string;
+  slot_time: string;
+  max_bookings: number;
+  current_bookings: number;
+}
+
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
-  const { userRole } = useAuth();
+  const { user, userRole } = useAuth();
   const [property, setProperty] = useState<PropertyWithRooms | null>(null);
   const [loading, setLoading] = useState(true);
+  const [slots, setSlots] = useState<InspectionSlot[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [booking, setBooking] = useState(false);
+  const [booked, setBooked] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const isAdmin = userRole === "super_admin" || userRole === "manager" || userRole === "verifier";
   const isLandlord = userRole === "landlord";
@@ -36,7 +54,72 @@ export default function PropertyDetail() {
         setProperty(data as PropertyWithRooms | null);
         setLoading(false);
       });
-  }, [id]);
+
+    // Fetch available slots
+    (supabase as any)
+      .from("inspection_slots")
+      .select("*")
+      .eq("property_id", id)
+      .gte("slot_date", new Date().toISOString().split("T")[0])
+      .order("slot_date", { ascending: true })
+      .order("slot_time", { ascending: true })
+      .then(({ data }: any) => setSlots(data || []));
+
+    // Check if user already booked
+    if (user) {
+      (supabase as any)
+        .from("inspection_bookings")
+        .select("id")
+        .eq("property_id", id)
+        .eq("user_id", user.id)
+        .maybeSingle()
+        .then(({ data }: any) => { if (data) setBooked(true); });
+    }
+  }, [id, user]);
+
+  const availableDates = [...new Set(slots.map((s) => s.slot_date))];
+  const slotsForDate = selectedDate
+    ? slots.filter((s) => s.slot_date === format(selectedDate, "yyyy-MM-dd") && s.current_bookings < s.max_bookings)
+    : [];
+
+  const bookSlot = async (slot: InspectionSlot) => {
+    if (!user) { toast.error("Please sign in first"); return; }
+    setBooking(true);
+
+    // Get client record
+    const { data: client } = await (supabase as any)
+      .from("clients")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!client) {
+      toast.error("Please complete your profile first");
+      setBooking(false);
+      return;
+    }
+
+    const { error } = await (supabase as any).from("inspection_bookings").insert({
+      slot_id: slot.id,
+      property_id: id,
+      client_id: client.id,
+      user_id: user.id,
+    });
+
+    if (error) {
+      toast.error(error.message || "Booking failed");
+    } else {
+      toast.success("Inspection booked! You'll receive a confirmation notification.");
+      setBooked(true);
+      setDialogOpen(false);
+    }
+    setBooking(false);
+  };
+
+  const isDayAvailable = (date: Date) => {
+    const dateStr = format(date, "yyyy-MM-dd");
+    return availableDates.includes(dateStr);
+  };
 
   if (loading) {
     return (
@@ -155,7 +238,7 @@ export default function PropertyDetail() {
             </CardContent>
           </Card>
 
-          {/* Landlord Contact - only for admins/landlords */}
+          {/* Inspection Booking / Landlord Contact */}
           {showLandlordContact ? (
             <Card>
               <CardHeader><CardTitle>Landlord Contact</CardTitle></CardHeader>
@@ -175,16 +258,76 @@ export default function PropertyDetail() {
             </Card>
           ) : (
             <Card>
-              <CardHeader><CardTitle>Interested?</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5" /> Schedule Inspection</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Contact MyCrib.ng to arrange a viewing or get matched with this property. All bookings go through our platform to ensure your safety and satisfaction.
-                </p>
-                <Link to="/profile">
-                  <Button className="w-full gradient-primary text-primary-foreground">
-                    Complete Profile to Get Matched
-                  </Button>
-                </Link>
+                {booked ? (
+                  <div className="text-center py-4">
+                    <CheckCircle className="mx-auto h-10 w-10 text-success mb-2" />
+                    <p className="font-semibold text-success">Inspection Booked!</p>
+                    <p className="text-sm text-muted-foreground mt-1">Check your notifications for details.</p>
+                  </div>
+                ) : slots.length === 0 ? (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      No inspection slots available yet. Contact MyCrib.ng for more information.
+                    </p>
+                    <Link to="/profile">
+                      <Button className="w-full gradient-primary text-primary-foreground">
+                        Complete Profile to Get Matched
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full gradient-accent text-accent-foreground font-semibold">
+                        <CalendarDays className="mr-2 h-4 w-4" /> Book Inspection
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Pick an Inspection Date & Time</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={setSelectedDate}
+                          disabled={(date) => !isDayAvailable(date)}
+                          className={cn("p-3 pointer-events-auto rounded-md border mx-auto")}
+                        />
+                        {selectedDate && (
+                          <div>
+                            <h4 className="text-sm font-medium mb-2">
+                              Available times for {format(selectedDate, "PPP")}:
+                            </h4>
+                            {slotsForDate.length === 0 ? (
+                              <p className="text-sm text-muted-foreground">All slots are full for this date.</p>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-2">
+                                {slotsForDate.map((slot) => (
+                                  <Button
+                                    key={slot.id}
+                                    variant="outline"
+                                    onClick={() => bookSlot(slot)}
+                                    disabled={booking}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <Clock className="h-3 w-3" />
+                                    {slot.slot_time.slice(0, 5)}
+                                    <span className="text-xs text-muted-foreground">
+                                      ({slot.max_bookings - slot.current_bookings} left)
+                                    </span>
+                                  </Button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
               </CardContent>
             </Card>
           )}
