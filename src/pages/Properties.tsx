@@ -129,6 +129,11 @@ export default function Properties() {
                   {p.property_type}
                 </Badge>
                 <VerificationBadge status={p.verification_status} />
+                {(p as any).management_type === "listed" ? (
+                  <Badge variant="outline" className="bg-accent/80 backdrop-blur-sm text-accent-foreground border-accent/30 shadow-sm text-[10px]">Listed Only</Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-primary/80 backdrop-blur-sm text-primary-foreground border-primary/30 shadow-sm text-[10px]">Fully Managed</Badge>
+                )}
               </div>
               {user && (
                 <button
