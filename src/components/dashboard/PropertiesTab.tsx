@@ -28,6 +28,8 @@ export function PropertiesTab() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [newPhotos, setNewPhotos] = useState<File[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [csvUploading, setCsvUploading] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
