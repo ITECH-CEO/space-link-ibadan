@@ -245,7 +245,7 @@ export default function MyMatches() {
                                   {m.room_type_name && <Badge variant="secondary" className="text-xs">{m.room_type_name}</Badge>}
                                   {m.room_type_price && (
                                     <span className="flex items-center gap-1 font-medium text-primary">
-                                      <DollarSign className="h-3 w-3" />₦{m.room_type_price.toLocaleString()}
+                                      ₦{m.room_type_price.toLocaleString()}
                                     </span>
                                   )}
                                 </div>

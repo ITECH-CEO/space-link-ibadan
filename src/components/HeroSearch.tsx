@@ -50,7 +50,7 @@ export function HeroSearch() {
           {/* Budget */}
           <Select value={budget} onValueChange={setBudget}>
             <SelectTrigger className="border-0 bg-muted/50 h-12">
-              <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
+              <Banknote className="mr-2 h-4 w-4 text-muted-foreground" />
               <SelectValue placeholder="Budget" />
             </SelectTrigger>
             <SelectContent>

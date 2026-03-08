@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { MapPin, Users, Phone, Mail, ArrowLeft, DollarSign, Building2, CalendarDays, Clock, CheckCircle, XCircle, Star, MessageSquare, Footprints, Bus, Zap, Droplets, Navigation, Bike, Car } from "lucide-react";
+import { MapPin, Users, Phone, Mail, ArrowLeft, Banknote, Building2, CalendarDays, Clock, CheckCircle, XCircle, Star, MessageSquare, Footprints, Bus, Zap, Droplets, Navigation, Bike, Car } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";

@@ -109,7 +109,7 @@ export function LandlordOccupancyTab() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-accent/10 p-2.5">
-                <DollarSign className="h-5 w-5 text-accent-foreground" />
+                <Banknote className="h-5 w-5 text-accent-foreground" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Placed Tenants</p>
