@@ -156,7 +156,18 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
           special_notes: form.special_notes || null,
           photos: photoUrls,
           videos: videoUrls,
-        })
+          distance_to_campus_km: form.distance_to_campus_km ? Number(form.distance_to_campus_km) : null,
+          walkability_rating: form.walkability_rating ? Number(form.walkability_rating) : null,
+          utility_rating: (form.power_rating || form.water_rating) ? {
+            power: form.power_rating ? Number(form.power_rating) : null,
+            water: form.water_rating ? Number(form.water_rating) : null,
+          } : null,
+          transport_options: form.transport_options.filter(t => t.mode).map(t => ({
+            mode: t.mode,
+            duration: t.duration || null,
+            cost_estimate: t.cost_estimate || null,
+          })),
+        } as any)
         .select("id")
         .single();
 
