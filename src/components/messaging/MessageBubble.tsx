@@ -203,12 +203,12 @@ export function MessageBubble({ message, isOwn, showAvatar, partnerName, partner
       </motion.div>
 
       {/* Image lightbox */}
-      {isImageFile && message.file_url && lightboxOpen && (
-        <ImageLightbox
-          images={[message.file_url]}
-          initialIndex={0}
-          onClose={() => setLightboxOpen(false)}
-        />
+      {isImageFile && message.file_url && (
+        <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+          <DialogContent className="max-w-3xl p-1 bg-background/95">
+            <img src={message.file_url} alt={message.file_name || "Image"} className="w-full h-auto rounded-lg" />
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );
