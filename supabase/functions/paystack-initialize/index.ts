@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
@@ -12,11 +12,18 @@ serve(async (req) => {
 
   try {
     const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY");
-    console.log("PAYSTACK_SECRET_KEY exists:", !!PAYSTACK_SECRET_KEY);
-    console.log("PAYSTACK_SECRET_KEY starts with sk_:", PAYSTACK_SECRET_KEY?.startsWith("sk_"));
-    console.log("PAYSTACK_SECRET_KEY length:", PAYSTACK_SECRET_KEY?.length);
     if (!PAYSTACK_SECRET_KEY) {
-      return new Response(JSON.stringify({ error: "Paystack not configured" }), {
+      console.error("PAYSTACK_SECRET_KEY is not set");
+      return new Response(JSON.stringify({ error: "Paystack not configured. Please contact admin." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate key format
+    if (!PAYSTACK_SECRET_KEY.startsWith("sk_")) {
+      console.error("PAYSTACK_SECRET_KEY has invalid format. Expected sk_test_ or sk_live_ prefix.");
+      return new Response(JSON.stringify({ error: "Invalid Paystack configuration. Please contact admin." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -30,6 +37,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    console.log("Initializing Paystack payment:", { email, amount, payment_type: metadata?.payment_type });
 
     // Initialize Paystack transaction
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
@@ -49,8 +58,8 @@ serve(async (req) => {
     const data = await response.json();
 
     if (!data.status) {
-      console.error("Paystack error response:", JSON.stringify(data));
-      return new Response(JSON.stringify({ error: data.message || "Payment initialization failed", details: data }), {
+      console.error("Paystack API error:", JSON.stringify(data));
+      return new Response(JSON.stringify({ error: data.message || "Payment initialization failed" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -64,6 +73,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.error("paystack-initialize error:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
