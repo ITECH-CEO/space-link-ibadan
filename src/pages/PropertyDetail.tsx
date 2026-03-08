@@ -16,8 +16,10 @@ import { toast } from "sonner";
 import { MapPin, Users, Phone, Mail, ArrowLeft, DollarSign, Building2, CalendarDays, Clock, CheckCircle, XCircle, Star, MessageSquare, Footprints, Bus, Zap, Droplets, Navigation, Bike, Car } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import type { Tables } from "@/integrations/supabase/types";
 import { InspectionBookingWizard } from "@/components/InspectionBookingWizard";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
