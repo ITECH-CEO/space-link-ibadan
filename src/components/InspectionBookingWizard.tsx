@@ -267,8 +267,9 @@ export function InspectionBookingWizard({
             </Button>
           </div>
         </div>
+        )}
       </div>
       <InspectionTour />
-    </div>
+    </>
   );
 }
