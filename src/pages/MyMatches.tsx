@@ -18,6 +18,7 @@ import { ClientRentPayments } from "@/components/ClientRentPayments";
 import { ClientComplaintForm } from "@/components/ClientComplaintForm";
 import { ClientComplaintTracker } from "@/components/ClientComplaintTracker";
 import { ClientPlatformComplaint } from "@/components/ClientPlatformComplaint";
+import { TenantAccommodationCard } from "@/components/TenantAccommodationCard";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
@@ -213,6 +214,11 @@ export default function MyMatches() {
           <h1 className="font-display text-3xl font-bold">My Matches</h1>
           <p className="text-muted-foreground">Properties and roommates matched to your profile</p>
         </motion.div>
+
+        {/* Tenant Accommodation Section - shows when user has occupied rooms */}
+        <div className="mb-8">
+          <TenantAccommodationCard />
+        </div>
 
         {loading ? (
           <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}</div>
