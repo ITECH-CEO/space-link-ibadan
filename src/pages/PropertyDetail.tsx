@@ -675,9 +675,6 @@ export default function PropertyDetail() {
     </div>
   );
 }
-
-// Extracted calendar component to reduce duplication
-function BookingCalendar({
   selectedDate, onSelectDate, isDayAvailable, slotsForDate, booking, onBookSlot,
 }: {
   selectedDate: Date | undefined;
