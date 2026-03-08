@@ -10,7 +10,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { toast } from "sonner";
-import { Handshake, Building2, MapPin, Banknote, Users, Sparkles, Loader2, MessageSquare, LayoutGrid, Heart, CheckCheck, X } from "lucide-react";
+import {
+  Handshake, Building2, MapPin, Banknote, Users, Sparkles, Loader2,
+  MessageSquare, LayoutGrid, Heart, CheckCheck, X, Home, Wrench,
+  HelpCircle, FileText, DoorOpen,
+} from "lucide-react";
 import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
 import { motion } from "framer-motion";
 import { MatchesTour } from "@/components/tours/MatchesTour";
@@ -55,6 +59,7 @@ export default function MyMatches() {
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState<string | null>(null);
   const [swipeView, setSwipeView] = useState(false);
+  const [isTenant, setIsTenant] = useState(false);
 
   const fetchAll = async () => {
     if (!user) return;
@@ -65,6 +70,15 @@ export default function MyMatches() {
     setSeekingRoommate(client.seeking_roommate || false);
     setClientName(client.full_name || "");
     setClientPhone(client.phone || null);
+
+    // Check if tenant (has occupied rooms)
+    const { data: occupancies } = await (supabase as any)
+      .from("room_occupancies")
+      .select("id")
+      .eq("client_id", client.id)
+      .in("status", ["occupied", "at_risk"])
+      .limit(1);
+    setIsTenant((occupancies || []).length > 0);
 
     const { data: propData } = await supabase
       .from("matches")
@@ -124,51 +138,31 @@ export default function MyMatches() {
   const handleSwipeAction = async (matchId: string, action: "accepted" | "rejected") => {
     const match = roommateMatches.find(m => m.id === matchId);
     if (!match) return;
-
     const updateCol = match.is_client_a ? "client_a_status" : "client_b_status";
     const { error } = await (supabase as any)
       .from("roommate_matches")
       .update({ [updateCol]: action })
       .eq("id", matchId);
-
-    if (error) {
-      toast.error("Failed to save your choice");
-      return;
-    }
-
-    // Check if mutual match
+    if (error) { toast.error("Failed to save your choice"); return; }
     if (action === "accepted" && match.partner_status === "accepted") {
-      // Both accepted — update overall status to confirmed
-      await (supabase as any)
-        .from("roommate_matches")
-        .update({ status: "confirmed" })
-        .eq("id", matchId);
+      await (supabase as any).from("roommate_matches").update({ status: "confirmed" }).eq("id", matchId);
       toast.success(`🎉 It's a match! You and ${match.partner_name} both liked each other!`);
     } else if (action === "accepted") {
       toast.success("Liked! Waiting for their response...");
     } else {
       toast("Passed");
     }
-
-    // Update local state
     setRoommateMatches(prev => prev.map(m => {
       if (m.id !== matchId) return m;
-      const newMyStatus = action;
       const newOverallStatus = action === "accepted" && m.partner_status === "accepted" ? "confirmed" : m.status;
-      return { ...m, my_status: newMyStatus, status: newOverallStatus };
+      return { ...m, my_status: action, status: newOverallStatus };
     }));
   };
 
   const requestRoommateMatch = async () => {
     if (!clientId) { toast.error("Complete your profile first"); return; }
-
-    // Check max 5 active (pending) matches
     const pendingCount = roommateMatches.filter(m => m.my_status === "pending").length;
-    if (pendingCount >= 5) {
-      toast.error("You have 5 pending matches. Review them first before requesting more.");
-      return;
-    }
-
+    if (pendingCount >= 5) { toast.error("You have 5 pending matches. Review them first."); return; }
     setRequesting(true);
     try {
       await (supabase as any).from("clients").update({ seeking_roommate: true }).eq("id", clientId);
@@ -177,20 +171,12 @@ export default function MyMatches() {
       if (!session) { toast.error("Not authenticated"); return; }
       const res = await supabase.functions.invoke("roommate-match", { body: { client_id: clientId } });
       if (res.error) toast.error(res.error.message || "Matching failed");
-      else {
-        toast.success(res.data?.message || "Roommate match request submitted!");
-        await fetchAll();
-      }
-    } catch (err: any) {
-      toast.error(err.message || "An error occurred");
-    } finally {
-      setRequesting(false);
-    }
+      else { toast.success(res.data?.message || "Roommate match request submitted!"); await fetchAll(); }
+    } catch (err: any) { toast.error(err.message || "An error occurred"); }
+    finally { setRequesting(false); }
   };
 
-  const messageRoommate = (partnerUserId: string) => {
-    navigate(`/messages?to=${partnerUserId}`);
-  };
+  const messageRoommate = (partnerUserId: string) => navigate(`/messages?to=${partnerUserId}`);
 
   const statusColors: Record<string, string> = {
     pending: "bg-warning/10 text-warning border-warning/20",
@@ -202,293 +188,356 @@ export default function MyMatches() {
   const scoreClass = (s: number | null) =>
     (s ?? 0) >= 70 ? "text-success" : (s ?? 0) >= 50 ? "text-warning" : "text-muted-foreground";
 
-  // Separate confirmed matches vs pending
   const confirmedMatches = roommateMatches.filter(m => m.status === "confirmed");
   const pendingRoommates = roommateMatches.filter(m => m.status !== "confirmed" && m.my_status !== "rejected");
+  const acceptedMatches = matches.filter(m => m.status === "accepted");
+
+  // Determine default tab
+  const defaultTab = isTenant ? "accommodation" : "matches";
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container max-w-3xl py-8">
+      <main className="container max-w-4xl py-8">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-          <h1 className="font-display text-3xl font-bold">My Matches</h1>
-          <p className="text-muted-foreground">Properties and roommates matched to your profile</p>
+          <h1 className="font-display text-3xl font-bold">My Dashboard</h1>
+          <p className="text-muted-foreground">
+            {isTenant ? "Manage your accommodation, payments, and requests" : "Your property matches and roommate connections"}
+          </p>
         </motion.div>
-
-        {/* Tenant Accommodation Section - shows when user has occupied rooms */}
-        <div className="mb-8">
-          <TenantAccommodationCard />
-        </div>
 
         {loading ? (
           <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}</div>
         ) : (
-          <Tabs defaultValue="properties">
-            <TabsList className="mb-4" data-tour="matches-tabs">
-              <TabsTrigger value="properties"><Building2 className="mr-2 h-4 w-4" />Properties ({matches.length})</TabsTrigger>
-              <TabsTrigger value="roommates"><Users className="mr-2 h-4 w-4" />Roommates ({roommateMatches.length})</TabsTrigger>
-            </TabsList>
+          <>
+            {/* Quick Action Cards — shown for tenants */}
+            {isTenant && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6"
+              >
+                <QuickAction icon={Home} label="My Room" color="bg-primary/10 text-primary" onClick={() => {
+                  document.getElementById("tab-accommodation")?.click();
+                }} />
+                <QuickAction icon={Banknote} label="Payments" color="bg-success/10 text-success" onClick={() => {
+                  document.getElementById("tab-payments")?.click();
+                }} />
+                <QuickAction icon={Wrench} label="Report Issue" color="bg-warning/10 text-warning" onClick={() => {
+                  document.getElementById("tab-help")?.click();
+                }} />
+                <QuickAction icon={MessageSquare} label="Messages" color="bg-accent/10 text-accent-foreground" onClick={() => navigate("/messages")} />
+              </motion.div>
+            )}
 
-            <TabsContent value="properties">
-              {matches.length === 0 ? (
-                <Card className="card-elevated border-border/50">
-                  <CardContent className="py-12 text-center">
-                    <Handshake className="mx-auto h-16 w-16 text-muted-foreground/20 mb-4" />
-                    <h2 className="text-lg font-semibold mb-2">No Property Matches Yet</h2>
-                    <p className="text-muted-foreground mb-4">Complete your profile with budget and preferences.</p>
-                    <Link to="/profile" className="text-primary underline">Complete your profile →</Link>
-                  </CardContent>
-                </Card>
-              ) : (
-                <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-4">
-                  {matches.map((m) => (
-                    <motion.div key={m.id} variants={fadeUp}>
-                      <Card className="transition-all hover:shadow-lg hover:glow-primary card-elevated border-border/50">
-                        <CardContent className="p-5">
-                          <Link to={`/property/${m.property_id}`}>
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Building2 className="h-4 w-4 text-primary" />
-                                  <h3 className="font-semibold">{m.property_name}</h3>
-                                </div>
-                                <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-                                  <MapPin className="h-3 w-3" /> {m.property_address}
-                                </div>
-                                <div className="flex items-center gap-3 text-sm">
-                                  {m.room_type_name && <Badge variant="secondary" className="text-xs">{m.room_type_name}</Badge>}
-                                  {m.room_type_price && (
-                                    <span className="flex items-center gap-1 font-medium text-primary">
-                                      ₦{m.room_type_price.toLocaleString()}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-end gap-2">
-                                <div className={`text-lg font-bold ${scoreClass(m.compatibility_score)}`}>{m.compatibility_score ?? 0}%</div>
-                                <Badge variant="outline" className={statusColors[m.status] || ""}>{m.status}</Badge>
-                              </div>
-                            </div>
-                          </Link>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </TabsContent>
+            <Tabs defaultValue={defaultTab}>
+              <TabsList className="mb-4 flex-wrap" data-tour="matches-tabs">
+                {isTenant && (
+                  <TabsTrigger value="accommodation" id="tab-accommodation">
+                    <Home className="mr-2 h-4 w-4" />My Room
+                  </TabsTrigger>
+                )}
+                <TabsTrigger value="matches">
+                  <Building2 className="mr-2 h-4 w-4" />Matches ({matches.length})
+                </TabsTrigger>
+                <TabsTrigger value="roommates">
+                  <Users className="mr-2 h-4 w-4" />Roommates ({roommateMatches.length})
+                </TabsTrigger>
+                {isTenant && (
+                  <TabsTrigger value="payments" id="tab-payments">
+                    <Banknote className="mr-2 h-4 w-4" />Payments
+                  </TabsTrigger>
+                )}
+                <TabsTrigger value="help" id="tab-help">
+                  <HelpCircle className="mr-2 h-4 w-4" />Help
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="roommates">
-              <Card className="mb-4 border-primary/20 card-elevated" data-tour="roommate-find">
-                <CardContent className="py-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-sm">Find a Roommate</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {seekingRoommate
-                          ? "You're actively looking for roommates. We'll notify you when we find a match!"
-                          : "Request AI-powered roommate matching based on your course, faculty, and preferences."}
-                      </p>
-                    </div>
-                    <Button
-                      onClick={requestRoommateMatch}
-                      disabled={requesting}
-                      size="sm"
-                      className="gradient-primary text-primary-foreground"
-                    >
-                      {requesting ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finding...</>
-                      ) : (
-                        <><Sparkles className="mr-2 h-4 w-4" />{seekingRoommate ? "Re-match" : "Find Roommate"}</>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Confirmed Matches Section */}
-              {confirmedMatches.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="flex items-center gap-2 font-display font-semibold text-sm mb-3 text-success">
-                    <CheckCheck className="h-4 w-4" /> Confirmed Matches ({confirmedMatches.length})
-                  </h3>
-                  <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
-                    {confirmedMatches.map((r) => (
-                      <motion.div key={r.id} variants={fadeUp}>
-                        <Card className="border-success/20 card-elevated">
-                          <CardContent className="p-5">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-center gap-3">
-                                {r.partner_photo ? (
-                                  <img src={r.partner_photo} alt={r.partner_name} className="h-12 w-12 rounded-full object-cover border-2 border-success/30" />
-                                ) : (
-                                  <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center border-2 border-success/30">
-                                    <Users className="h-5 w-5 text-success" />
-                                  </div>
-                                )}
-                                <div>
-                                  <h3 className="font-semibold">{r.partner_name}</h3>
-                                  {r.partner_faculty && <p className="text-xs text-muted-foreground">{r.partner_faculty} • {r.partner_course}</p>}
-                                  {r.property_name && <p className="text-xs text-muted-foreground mt-0.5">📍 {r.property_name}</p>}
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-end gap-2">
-                                <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
-                                <Badge variant="outline" className="bg-success/10 text-success border-success/20">✓ Mutual Match</Badge>
-                              </div>
-                            </div>
-                            {r.partner_user_id && (
-                              <Button onClick={() => messageRoommate(r.partner_user_id!)} variant="outline" size="sm" className="mt-3 w-full">
-                                <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
-                              </Button>
-                            )}
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                </div>
+              {/* ===== ACCOMMODATION TAB ===== */}
+              {isTenant && (
+                <TabsContent value="accommodation">
+                  <TenantAccommodationCard />
+                </TabsContent>
               )}
 
-              {/* Pending / Swipeable Matches */}
-              {pendingRoommates.length === 0 && confirmedMatches.length === 0 ? (
-                <Card className="card-elevated border-border/50">
-                  <CardContent className="py-12 text-center">
-                    <Users className="mx-auto h-16 w-16 text-muted-foreground/20 mb-4" />
-                    <h2 className="text-lg font-semibold mb-2">No Roommate Matches Yet</h2>
-                    <p className="text-muted-foreground">Click "Find Roommate" above and make sure your profile has your course and faculty info.</p>
-                  </CardContent>
-                </Card>
-              ) : pendingRoommates.length > 0 && swipeView ? (
-                <RoommateSwipeCard
-                  matches={pendingRoommates}
-                  onMessage={(userId) => messageRoommate(userId)}
-                  onBack={() => setSwipeView(false)}
-                  onSwipeAction={handleSwipeAction}
-                />
-              ) : pendingRoommates.length > 0 ? (
-                <>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-display font-semibold text-sm text-muted-foreground">
-                      Pending ({pendingRoommates.filter(m => m.my_status === "pending").length} to review)
-                    </h3>
-                    <Button variant="outline" size="sm" onClick={() => setSwipeView(true)} className="text-sm" data-tour="roommate-swipe">
-                      <LayoutGrid className="mr-2 h-4 w-4" /> Swipe View
-                    </Button>
-                  </div>
-                  <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
-                    {pendingRoommates.map((r) => (
-                      <motion.div key={r.id} variants={fadeUp}>
-                        <Card className="transition-all hover:shadow-md card-elevated border-border/50">
+              {/* ===== MATCHES TAB ===== */}
+              <TabsContent value="matches">
+                {matches.length === 0 ? (
+                  <Card className="card-elevated border-border/50">
+                    <CardContent className="py-12 text-center">
+                      <Handshake className="mx-auto h-16 w-16 text-muted-foreground/20 mb-4" />
+                      <h2 className="text-lg font-semibold mb-2">No Property Matches Yet</h2>
+                      <p className="text-muted-foreground mb-4">Complete your profile with budget and preferences.</p>
+                      <Link to="/profile" className="text-primary underline">Complete your profile →</Link>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-4">
+                    {matches.map((m) => (
+                      <motion.div key={m.id} variants={fadeUp}>
+                        <Card className="transition-all hover:shadow-lg hover:glow-primary card-elevated border-border/50">
                           <CardContent className="p-5">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-center gap-3">
-                                {r.partner_photo ? (
-                                  <img src={r.partner_photo} alt={r.partner_name} className="h-10 w-10 rounded-full object-cover" />
-                                ) : (
-                                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                                    <Users className="h-4 w-4 text-muted-foreground" />
-                                  </div>
-                                )}
+                            <Link to={`/property/${m.property_id}`}>
+                              <div className="flex items-start justify-between">
                                 <div className="flex-1">
-                                  <h3 className="font-semibold">{r.partner_name}</h3>
-                                  {r.partner_faculty && <p className="text-xs text-muted-foreground">{r.partner_faculty}{r.partner_course ? ` • ${r.partner_course}` : ""}</p>}
-                                  {r.property_name && (
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                      <Building2 className="inline h-3 w-3 mr-1" />Shared interest: {r.property_name}
-                                    </p>
-                                  )}
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <Building2 className="h-4 w-4 text-primary" />
+                                    <h3 className="font-semibold">{m.property_name}</h3>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+                                    <MapPin className="h-3 w-3" /> {m.property_address}
+                                  </div>
+                                  <div className="flex items-center gap-3 text-sm">
+                                    {m.room_type_name && <Badge variant="secondary" className="text-xs">{m.room_type_name}</Badge>}
+                                    {m.room_type_price && (
+                                      <span className="flex items-center gap-1 font-medium text-primary">₦{m.room_type_price.toLocaleString()}</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-2">
+                                  <div className={`text-lg font-bold ${scoreClass(m.compatibility_score)}`}>{m.compatibility_score ?? 0}%</div>
+                                  <Badge variant="outline" className={statusColors[m.status] || ""}>{m.status}</Badge>
                                 </div>
                               </div>
-                              <div className="flex flex-col items-end gap-2">
-                                <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
-                                <Badge variant="outline" className={statusColors[r.my_status] || ""}>
-                                  {r.my_status === "accepted" ? "You liked" : r.my_status}
-                                </Badge>
-                              </div>
-                            </div>
-
-                            {/* Action buttons for pending */}
-                            {r.my_status === "pending" && (
-                              <div className="flex gap-2 mt-3">
-                                <Button
-                                  onClick={() => handleSwipeAction(r.id, "rejected")}
-                                  variant="outline"
-                                  size="sm"
-                                  className="flex-1 border-destructive/30 text-destructive hover:bg-destructive/10"
-                                >
-                                  <X className="mr-1 h-4 w-4" /> Pass
-                                </Button>
-                                <Button
-                                  onClick={() => handleSwipeAction(r.id, "accepted")}
-                                  size="sm"
-                                  className="flex-1 bg-success text-success-foreground hover:bg-success/90"
-                                >
-                                  <Heart className="mr-1 h-4 w-4" /> Like
-                                </Button>
-                              </div>
-                            )}
-
-                            {r.my_status === "accepted" && r.partner_user_id && (
-                              <Button onClick={() => messageRoommate(r.partner_user_id!)} variant="outline" size="sm" className="mt-3 w-full">
-                                <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
-                              </Button>
-                            )}
+                            </Link>
                           </CardContent>
                         </Card>
                       </motion.div>
                     ))}
                   </motion.div>
-                </>
-              ) : null}
-            </TabsContent>
-          </Tabs>
+                )}
+              </TabsContent>
+
+              {/* ===== ROOMMATES TAB ===== */}
+              <TabsContent value="roommates">
+                <Card className="mb-4 border-primary/20 card-elevated" data-tour="roommate-find">
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold text-sm">Find a Roommate</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {seekingRoommate
+                            ? "You're actively looking. We'll notify you when we find a match!"
+                            : "AI-powered matching based on your course, faculty, and preferences."}
+                        </p>
+                      </div>
+                      <Button onClick={requestRoommateMatch} disabled={requesting} size="sm" className="gradient-primary text-primary-foreground">
+                        {requesting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finding...</> : <><Sparkles className="mr-2 h-4 w-4" />{seekingRoommate ? "Re-match" : "Find Roommate"}</>}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {confirmedMatches.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="flex items-center gap-2 font-display font-semibold text-sm mb-3 text-success">
+                      <CheckCheck className="h-4 w-4" /> Confirmed ({confirmedMatches.length})
+                    </h3>
+                    <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
+                      {confirmedMatches.map((r) => (
+                        <motion.div key={r.id} variants={fadeUp}>
+                          <Card className="border-success/20 card-elevated">
+                            <CardContent className="p-5">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-3">
+                                  {r.partner_photo ? (
+                                    <img src={r.partner_photo} alt={r.partner_name} className="h-12 w-12 rounded-full object-cover border-2 border-success/30" />
+                                  ) : (
+                                    <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center border-2 border-success/30">
+                                      <Users className="h-5 w-5 text-success" />
+                                    </div>
+                                  )}
+                                  <div>
+                                    <h3 className="font-semibold">{r.partner_name}</h3>
+                                    {r.partner_faculty && <p className="text-xs text-muted-foreground">{r.partner_faculty} • {r.partner_course}</p>}
+                                    {r.property_name && <p className="text-xs text-muted-foreground mt-0.5">📍 {r.property_name}</p>}
+                                  </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-2">
+                                  <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
+                                  <Badge variant="outline" className="bg-success/10 text-success border-success/20">✓ Mutual Match</Badge>
+                                </div>
+                              </div>
+                              {r.partner_user_id && (
+                                <Button onClick={() => messageRoommate(r.partner_user_id!)} variant="outline" size="sm" className="mt-3 w-full">
+                                  <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
+                                </Button>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  </div>
+                )}
+
+                {pendingRoommates.length === 0 && confirmedMatches.length === 0 ? (
+                  <Card className="card-elevated border-border/50">
+                    <CardContent className="py-12 text-center">
+                      <Users className="mx-auto h-16 w-16 text-muted-foreground/20 mb-4" />
+                      <h2 className="text-lg font-semibold mb-2">No Roommate Matches Yet</h2>
+                      <p className="text-muted-foreground">Click "Find Roommate" above to get started.</p>
+                    </CardContent>
+                  </Card>
+                ) : pendingRoommates.length > 0 && swipeView ? (
+                  <RoommateSwipeCard matches={pendingRoommates} onMessage={messageRoommate} onBack={() => setSwipeView(false)} onSwipeAction={handleSwipeAction} />
+                ) : pendingRoommates.length > 0 ? (
+                  <>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-display font-semibold text-sm text-muted-foreground">
+                        Pending ({pendingRoommates.filter(m => m.my_status === "pending").length} to review)
+                      </h3>
+                      <Button variant="outline" size="sm" onClick={() => setSwipeView(true)} data-tour="roommate-swipe">
+                        <LayoutGrid className="mr-2 h-4 w-4" /> Swipe View
+                      </Button>
+                    </div>
+                    <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
+                      {pendingRoommates.map((r) => (
+                        <motion.div key={r.id} variants={fadeUp}>
+                          <Card className="transition-all hover:shadow-md card-elevated border-border/50">
+                            <CardContent className="p-5">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-3">
+                                  {r.partner_photo ? (
+                                    <img src={r.partner_photo} alt={r.partner_name} className="h-10 w-10 rounded-full object-cover" />
+                                  ) : (
+                                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                      <Users className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                  )}
+                                  <div className="flex-1">
+                                    <h3 className="font-semibold">{r.partner_name}</h3>
+                                    {r.partner_faculty && <p className="text-xs text-muted-foreground">{r.partner_faculty}{r.partner_course ? ` • ${r.partner_course}` : ""}</p>}
+                                    {r.property_name && (
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        <Building2 className="inline h-3 w-3 mr-1" />Shared interest: {r.property_name}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-2">
+                                  <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
+                                  <Badge variant="outline" className={statusColors[r.my_status] || ""}>
+                                    {r.my_status === "accepted" ? "You liked" : r.my_status}
+                                  </Badge>
+                                </div>
+                              </div>
+                              {r.my_status === "pending" && (
+                                <div className="flex gap-2 mt-3">
+                                  <Button onClick={() => handleSwipeAction(r.id, "rejected")} variant="outline" size="sm" className="flex-1 border-destructive/30 text-destructive hover:bg-destructive/10">
+                                    <X className="mr-1 h-4 w-4" /> Pass
+                                  </Button>
+                                  <Button onClick={() => handleSwipeAction(r.id, "accepted")} size="sm" className="flex-1 bg-success text-success-foreground hover:bg-success/90">
+                                    <Heart className="mr-1 h-4 w-4" /> Like
+                                  </Button>
+                                </div>
+                              )}
+                              {r.my_status === "accepted" && r.partner_user_id && (
+                                <Button onClick={() => messageRoommate(r.partner_user_id!)} variant="outline" size="sm" className="mt-3 w-full">
+                                  <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
+                                </Button>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  </>
+                ) : null}
+              </TabsContent>
+
+              {/* ===== PAYMENTS TAB ===== */}
+              {isTenant && (
+                <TabsContent value="payments">
+                  <ClientRentPayments />
+                </TabsContent>
+              )}
+
+              {/* ===== HELP TAB (consolidated complaints) ===== */}
+              <TabsContent value="help">
+                <div className="space-y-6">
+                  {/* Action buttons */}
+                  <Card className="card-elevated border-border/50">
+                    <CardContent className="p-5">
+                      <h3 className="font-display font-semibold mb-1">Need Help?</h3>
+                      <p className="text-sm text-muted-foreground mb-4">Choose what kind of support you need</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Platform complaint — always available */}
+                        {clientId && user && (
+                          <Card className="border-border/50 hover:border-primary/30 transition-colors">
+                            <CardContent className="p-4 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="rounded-lg bg-primary/10 p-2">
+                                  <HelpCircle className="h-5 w-5 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">Platform Support</p>
+                                  <p className="text-xs text-muted-foreground">Questions, billing, account</p>
+                                </div>
+                              </div>
+                              <ClientPlatformComplaint userId={user.id} clientName={clientName} clientEmail={user.email} clientPhone={clientPhone} />
+                            </CardContent>
+                          </Card>
+                        )}
+
+                        {/* Maintenance complaint — tenants only */}
+                        {acceptedMatches.length > 0 && user && (
+                          <Card className="border-warning/20 hover:border-warning/40 transition-colors">
+                            <CardContent className="p-4 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="rounded-lg bg-warning/10 p-2">
+                                  <Wrench className="h-5 w-5 text-warning" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">Maintenance Issue</p>
+                                  <p className="text-xs text-muted-foreground">Room repairs, facilities</p>
+                                </div>
+                              </div>
+                              <ClientComplaintForm
+                                matchedProperties={acceptedMatches.map(m => ({ property_id: m.property_id, property_name: m.property_name }))}
+                                clientName={clientName}
+                                clientPhone={clientPhone}
+                                userId={user.id}
+                              />
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Complaint Tracker */}
+                  <ClientComplaintTracker />
+                </div>
+              </TabsContent>
+            </Tabs>
+          </>
         )}
-
-        {/* Platform Complaint — any registered client */}
-        {clientId && user && (
-          <div className="mt-6 flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card">
-            <div>
-              <h3 className="font-semibold text-sm">Have a question or complaint?</h3>
-              <p className="text-xs text-muted-foreground">Contact support about any platform issue or inquiry</p>
-            </div>
-            <ClientPlatformComplaint
-              userId={user.id}
-              clientName={clientName}
-              clientEmail={user.email}
-              clientPhone={clientPhone}
-            />
-          </div>
-        )}
-
-        {/* Maintenance Complaint — tenants with occupied rooms only */}
-        {matches.filter(m => m.status === "accepted").length > 0 && user && (
-          <div className="mt-4 flex items-center justify-between p-4 rounded-xl border border-warning/20 bg-card">
-            <div>
-              <h3 className="font-semibold text-sm">Having a maintenance issue?</h3>
-              <p className="text-xs text-muted-foreground">Report problems with your rented room to the landlord</p>
-            </div>
-            <ClientComplaintForm
-              matchedProperties={matches.filter(m => m.status === "accepted").map(m => ({ property_id: m.property_id, property_name: m.property_name }))}
-              clientName={clientName}
-              clientPhone={clientPhone}
-              userId={user.id}
-            />
-          </div>
-        )}
-
-        {/* Complaint Tracker */}
-        <div className="mt-6">
-          <ClientComplaintTracker />
-        </div>
-
-        {/* Rent Payments Section */}
-        <div className="mt-8">
-          <ClientRentPayments />
-        </div>
       </main>
       <WhatsAppButton />
       <MatchesTour />
     </div>
+  );
+}
+
+/* Quick Action Card Component */
+function QuickAction({ icon: Icon, label, color, onClick }: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  color: string;
+  onClick: () => void;
+}) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      className="rounded-xl border border-border/50 bg-card p-4 text-left hover:shadow-md transition-shadow"
+    >
+      <div className={`rounded-lg ${color} p-2 w-fit mb-2`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <p className="text-sm font-semibold">{label}</p>
+    </motion.button>
   );
 }
