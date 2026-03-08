@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, Users, Shield, Handshake, ArrowRight, MapPin } from "lucide-react";
+import { Building2, Users, Shield, Handshake, ArrowRight, MapPin, Star, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { HeroSearch } from "@/components/HeroSearch";
 import { CampusCards } from "@/components/CampusCards";
 import { SuccessStories } from "@/components/SuccessStories";
+import { FeaturedProperties } from "@/components/FeaturedProperties";
 import mycribLogo from "@/assets/mycrib-logo.png";
 
 const features = [
@@ -45,24 +46,32 @@ export default function Index() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero with Search Bar */}
-      <section className="relative overflow-hidden gradient-hero py-20 md:py-28">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 50%, hsl(224 76% 48% / 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 50%, hsl(25 95% 53% / 0.2) 0%, transparent 50%)" }} />
-        <div className="container relative z-10">
+      {/* Hotels.ng-style Hero with full-width background image */}
+      <section className="relative overflow-hidden min-h-[520px] flex items-center justify-center">
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/images/hero-campus.jpg')" }}
+        />
+        <div className="absolute inset-0 bg-foreground/50" />
+
+        <div className="container relative z-10 py-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="mx-auto max-w-3xl text-center"
           >
-            <img src={mycribLogo} alt="MyCrib.ng" className="mx-auto mb-6 h-20 w-20 rounded-2xl object-contain" />
-            <h1 className="mb-4 font-display text-4xl font-bold leading-tight text-primary-foreground md:text-6xl">
-              Find Your Perfect <span className="text-accent">Crib</span> in Nigeria
+            <img src={mycribLogo} alt="MyCrib.ng" className="mx-auto mb-4 h-16 w-16 rounded-2xl object-contain shadow-lg" />
+            <h1 className="mb-3 font-display text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl">
+              Find Your Perfect <span className="text-accent">Crib</span> in Nigeria.
             </h1>
-            <p className="mb-2 text-lg text-primary-foreground/80 md:text-xl">
-              Search verified hostels, apartments, and shared rooms near your campus.
+            <p className="mb-2 text-lg text-white/80 md:text-xl">
+              Search through verified hostels, apartments, and shared rooms near your campus.
             </p>
           </motion.div>
+
+          {/* Floating Search Bar */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -73,8 +82,11 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="border-b bg-card py-12">
+      {/* Suggested Destinations — Hotels.ng style */}
+      <CampusCards />
+
+      {/* Stats Bar */}
+      <section className="border-y bg-card py-10">
         <div className="container">
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
             {displayStats.map((s, i) => (
@@ -94,8 +106,8 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Campus Cards */}
-      <CampusCards />
+      {/* Featured Properties — "Today's Top Deals" equivalent */}
+      <FeaturedProperties />
 
       {/* How it Works */}
       <section className="py-20 bg-card">
@@ -158,6 +170,11 @@ export default function Index() {
           <div className="flex items-center gap-2">
             <img src={mycribLogo} alt="MyCrib.ng" className="h-8 w-8 rounded-lg object-contain" />
             <span className="font-display font-bold">MyCrib.ng</span>
+          </div>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <a href="tel:+2348000000000" className="flex items-center gap-1 hover:text-foreground transition-colors">
+              <Phone className="h-3.5 w-3.5" /> +234 800 000 0000
+            </a>
           </div>
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} MyCrib.ng — Verified. Secure. Connected.
