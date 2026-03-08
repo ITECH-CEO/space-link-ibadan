@@ -18,6 +18,7 @@ import { ClientRentPayments } from "@/components/ClientRentPayments";
 import { ClientComplaintForm } from "@/components/ClientComplaintForm";
 import { ClientComplaintTracker } from "@/components/ClientComplaintTracker";
 import { ClientPlatformComplaint } from "@/components/ClientPlatformComplaint";
+import { TenantAccommodationCard } from "@/components/TenantAccommodationCard";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
