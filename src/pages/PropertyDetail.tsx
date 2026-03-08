@@ -182,6 +182,7 @@ export default function PropertyDetail() {
     verify();
   }, [searchParams, user]);
 
+  const availableDates = [...new Set(slots.map((s) => s.slot_date))];
   const isDayAvailable = (date: Date) => availableDates.includes(format(date, "yyyy-MM-dd"));
 
   const cancelBooking = async () => {
