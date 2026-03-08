@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
@@ -17,6 +17,7 @@ import { MapPin, Users, Phone, Mail, ArrowLeft, DollarSign, Building2, CalendarD
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
+import { InspectionBookingWizard } from "@/components/InspectionBookingWizard";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
@@ -40,6 +41,7 @@ interface BookingInfo {
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, userRole } = useAuth();
   const [property, setProperty] = useState<PropertyWithRooms | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,46 +121,69 @@ export default function PropertyDetail() {
     }
   }, [id, user]);
 
+  // Handle payment redirect verification
+  useEffect(() => {
+    const verifyInspection = searchParams.get("verify_inspection");
+    const reference = searchParams.get("reference") || searchParams.get("trxref");
+    if (!verifyInspection || !reference || !user) return;
+
+    const pendingStr = sessionStorage.getItem("pending_inspection");
+    if (!pendingStr) return;
+
+    const pending = JSON.parse(pendingStr);
+
+    const verify = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("paystack-verify", {
+          body: { reference },
+        });
+
+        if (error || !data?.verified) {
+          toast.error("Payment verification failed. Please contact support.");
+          return;
+        }
+
+        // Create the booking now that payment is verified
+        const { data: bookingData, error: bookError } = await (supabase as any)
+          .from("inspection_bookings")
+          .insert({
+            slot_id: pending.slot_id,
+            property_id: pending.property_id,
+            client_id: pending.client_id,
+            user_id: pending.user_id,
+            payment_status: "paid",
+            payment_reference: reference,
+          })
+          .select("id")
+          .single();
+
+        if (bookError) {
+          toast.error(bookError.message || "Booking failed after payment");
+        } else {
+          toast.success("Payment successful! Inspection booked.");
+          setBookingInfo({
+            id: bookingData.id,
+            status: "confirmed",
+            slot_id: pending.slot_id,
+            slot_date: pending.slot_date,
+            slot_time: pending.slot_time,
+          });
+        }
+
+        sessionStorage.removeItem("pending_inspection");
+      } catch (err: any) {
+        toast.error(err.message || "Verification error");
+      }
+
+      // Clean URL
+      setSearchParams({}, { replace: true });
+    };
+
+    verify();
+  }, [searchParams, user]);
+
   const availableDates = [...new Set(slots.map((s) => s.slot_date))];
-  const slotsForDate = selectedDate
-    ? slots.filter((s) => s.slot_date === format(selectedDate, "yyyy-MM-dd") && s.current_bookings < s.max_bookings)
-    : [];
-
-  const bookSlot = async (slot: InspectionSlot) => {
-    if (!user) { toast.error("Please sign in first"); return; }
-    setBooking(true);
-
-    const { data: client } = await (supabase as any)
-      .from("clients")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!client) {
-      toast.error("Please complete your profile first");
-      setBooking(false);
-      return;
-    }
-
-    const { error } = await (supabase as any).from("inspection_bookings").insert({
-      slot_id: slot.id,
-      property_id: id,
-      client_id: client.id,
-      user_id: user.id,
-    });
-
-    if (error) {
-      toast.error(error.message || "Booking failed");
-    } else {
-      toast.success("Inspection booked! You'll receive a confirmation notification.");
-      setBookingInfo({
-        id: "", status: "confirmed", slot_id: slot.id,
-        slot_date: slot.slot_date, slot_time: slot.slot_time,
-      });
-      setDialogOpen(false);
-    }
-    setBooking(false);
-  };
+  const isDayAvailable = (date: Date) => availableDates.includes(format(date, "yyyy-MM-dd"));
 
   const cancelBooking = async () => {
     if (!bookingInfo) return;
@@ -196,11 +221,6 @@ export default function PropertyDetail() {
       setFeedbackDialogOpen(false);
     }
     setSubmittingFeedback(false);
-  };
-
-  const isDayAvailable = (date: Date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    return availableDates.includes(dateStr);
   };
 
   const whatsAppMessage = property && bookingInfo?.slot_date
@@ -461,32 +481,19 @@ export default function PropertyDetail() {
                       )}
                     </div>
 
-                    {/* WhatsApp confirmation */}
                     {whatsAppMessage && (
-                      <a
-                        href={`https://wa.me/2349137425552?text=${encodeURIComponent(whatsAppMessage)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
+                      <a href={`https://wa.me/2349137425552?text=${encodeURIComponent(whatsAppMessage)}`} target="_blank" rel="noopener noreferrer" className="block">
                         <Button variant="outline" className="w-full border-success/30 text-success hover:bg-success/10">
                           <MessageSquare className="mr-2 h-4 w-4" /> Confirm via WhatsApp
                         </Button>
                       </a>
                     )}
 
-                    {/* Cancel button */}
-                    <Button
-                      variant="outline"
-                      className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
-                      onClick={cancelBooking}
-                      disabled={cancelling}
-                    >
+                    <Button variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10" onClick={cancelBooking} disabled={cancelling}>
                       <XCircle className="mr-2 h-4 w-4" />
                       {cancelling ? "Cancelling..." : "Cancel Inspection"}
                     </Button>
 
-                    {/* Post-inspection feedback */}
                     {bookingPassed && !hasFeedback && (
                       <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
                         <DialogTrigger asChild>
@@ -538,15 +545,16 @@ export default function PropertyDetail() {
                             <CalendarDays className="mr-2 h-4 w-4" /> Book Again
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
-                          <DialogHeader><DialogTitle>Pick an Inspection Date & Time</DialogTitle></DialogHeader>
-                          <BookingCalendar
-                            selectedDate={selectedDate}
-                            onSelectDate={setSelectedDate}
-                            isDayAvailable={isDayAvailable}
-                            slotsForDate={slotsForDate}
-                            booking={booking}
-                            onBookSlot={bookSlot}
+                        <DialogContent className="sm:max-w-lg">
+                          <DialogHeader><DialogTitle>Book Inspection</DialogTitle></DialogHeader>
+                          <InspectionBookingWizard
+                            propertyId={id!}
+                            propertyName={property.property_name}
+                            propertyAddress={property.address}
+                            propertyType={property.property_type}
+                            slots={slots}
+                            onBookingComplete={(info) => { setBookingInfo(info); setDialogOpen(false); }}
+                            onClose={() => setDialogOpen(false)}
                           />
                         </DialogContent>
                       </Dialog>
@@ -570,15 +578,16 @@ export default function PropertyDetail() {
                         <CalendarDays className="mr-2 h-4 w-4" /> Book Inspection
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader><DialogTitle>Pick an Inspection Date & Time</DialogTitle></DialogHeader>
-                      <BookingCalendar
-                        selectedDate={selectedDate}
-                        onSelectDate={setSelectedDate}
-                        isDayAvailable={isDayAvailable}
-                        slotsForDate={slotsForDate}
-                        booking={booking}
-                        onBookSlot={bookSlot}
+                    <DialogContent className="sm:max-w-lg">
+                      <DialogHeader><DialogTitle>Book Inspection</DialogTitle></DialogHeader>
+                      <InspectionBookingWizard
+                        propertyId={id!}
+                        propertyName={property.property_name}
+                        propertyAddress={property.address}
+                        propertyType={property.property_type}
+                        slots={slots}
+                        onBookingComplete={(info) => { setBookingInfo(info); setDialogOpen(false); }}
+                        onClose={() => setDialogOpen(false)}
                       />
                     </DialogContent>
                   </Dialog>
@@ -624,54 +633,3 @@ export default function PropertyDetail() {
   );
 }
 
-// Extracted calendar component to reduce duplication
-function BookingCalendar({
-  selectedDate, onSelectDate, isDayAvailable, slotsForDate, booking, onBookSlot,
-}: {
-  selectedDate: Date | undefined;
-  onSelectDate: (d: Date | undefined) => void;
-  isDayAvailable: (d: Date) => boolean;
-  slotsForDate: InspectionSlot[];
-  booking: boolean;
-  onBookSlot: (s: InspectionSlot) => void;
-}) {
-  return (
-    <div className="space-y-4">
-      <Calendar
-        mode="single"
-        selected={selectedDate}
-        onSelect={onSelectDate}
-        disabled={(date) => !isDayAvailable(date)}
-        className={cn("p-3 pointer-events-auto rounded-md border mx-auto")}
-      />
-      {selectedDate && (
-        <div>
-          <h4 className="text-sm font-medium mb-2">
-            Available times for {format(selectedDate, "PPP")}:
-          </h4>
-          {slotsForDate.length === 0 ? (
-            <p className="text-sm text-muted-foreground">All slots are full for this date.</p>
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              {slotsForDate.map((slot) => (
-                <Button
-                  key={slot.id}
-                  variant="outline"
-                  onClick={() => onBookSlot(slot)}
-                  disabled={booking}
-                  className="flex items-center gap-2"
-                >
-                  <Clock className="h-3 w-3" />
-                  {slot.slot_time.slice(0, 5)}
-                  <span className="text-xs text-muted-foreground">
-                    ({slot.max_bookings - slot.current_bookings} left)
-                  </span>
-                </Button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
