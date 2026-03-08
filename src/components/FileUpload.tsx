@@ -36,8 +36,16 @@ export function FileUpload({ bucket, folder, label, accept = "image/*", currentU
       return;
     }
 
-    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
-    onUploaded(urlData.publicUrl);
+    // For private buckets, use signed URL; for public, use public URL
+    if (bucket === "client-documents") {
+      const { data: signedData } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
+      if (signedData?.signedUrl) {
+        onUploaded(signedData.signedUrl);
+      }
+    } else {
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+      onUploaded(urlData.publicUrl);
+    }
     toast.success(`${label} uploaded!`);
     setUploading(false);
   };
