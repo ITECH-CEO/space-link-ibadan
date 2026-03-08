@@ -218,6 +218,11 @@ export default function PropertyDetail() {
                 {property.property_type}
               </Badge>
               <VerificationBadge status={property.verification_status} />
+              {(property as any).management_type === "listed" ? (
+                <Badge variant="outline" className="bg-accent/20 text-accent-foreground border-accent/30 text-xs">📋 Listed Only</Badge>
+              ) : (
+                <Badge variant="outline" className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 text-xs">✅ Fully Managed</Badge>
+              )}
             </div>
           </div>
         </motion.div>
