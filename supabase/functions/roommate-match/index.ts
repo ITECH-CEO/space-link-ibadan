@@ -16,6 +16,7 @@ interface Client {
   course: string | null;
   faculty: string | null;
   level: string | null;
+  gender: string | null;
 }
 
 function computeBaseScore(a: Client, b: Client): number {
