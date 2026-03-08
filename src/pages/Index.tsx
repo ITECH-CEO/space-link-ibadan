@@ -134,6 +134,7 @@ export default function Index() {
 
       <Footer />
       <WhatsAppButton />
+      <HomeTour />
     </div>
   );
 }
