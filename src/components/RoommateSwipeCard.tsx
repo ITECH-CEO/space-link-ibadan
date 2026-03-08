@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from "framer-motion";
-import { Users, Building2, Sparkles, X, Heart, MessageSquare, ChevronLeft, GraduationCap, BookOpen, Layers } from "lucide-react";
+import { Users, Building2, Sparkles, X, Heart, MessageSquare, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface RoommateMatchDetail {
   id: string;
@@ -11,37 +13,47 @@ interface RoommateMatchDetail {
   compatibility_score: number | null;
   ai_reasoning: string | null;
   partner_name: string;
+  partner_photo: string | null;
+  partner_faculty: string | null;
+  partner_course: string | null;
+  partner_level: string | null;
+  partner_preferences: string[] | null;
   property_name: string | null;
   partner_user_id?: string;
+  my_status: "pending" | "accepted" | "rejected";
 }
 
 interface RoommateSwipeCardProps {
   matches: RoommateMatchDetail[];
   onMessage: (userId: string) => void;
   onBack: () => void;
+  onSwipeAction: (matchId: string, action: "accepted" | "rejected") => void;
 }
 
-export function RoommateSwipeCard({ matches, onMessage, onBack }: RoommateSwipeCardProps) {
+export function RoommateSwipeCard({ matches, onMessage, onBack, onSwipeAction }: RoommateSwipeCardProps) {
+  // Only show matches the user hasn't acted on yet
+  const pendingMatches = matches.filter(m => m.my_status === "pending");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [gone] = useState(() => new Set<number>());
   const [swipeAction, setSwipeAction] = useState<"like" | "nope" | null>(null);
+  const [processing, setProcessing] = useState(false);
 
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 0, 200], [-18, 0, 18]);
   const likeOpacity = useTransform(x, [0, 100], [0, 1]);
   const nopeOpacity = useTransform(x, [-100, 0], [1, 0]);
 
-  const current = matches[currentIndex];
-  const next = matches[currentIndex + 1];
+  const current = pendingMatches[currentIndex];
+  const next = pendingMatches[currentIndex + 1];
 
-  if (!current && gone.size === matches.length) {
+  if (!current && gone.size >= pendingMatches.length) {
     return (
       <div className="flex flex-col items-center py-12">
         <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
           <Heart className="h-10 w-10 text-muted-foreground/40" />
         </div>
-        <h3 className="font-display text-xl font-bold mb-2">No More Matches</h3>
-        <p className="text-sm text-muted-foreground mb-4">You've seen all your roommate matches!</p>
+        <h3 className="font-display text-xl font-bold mb-2">All Caught Up!</h3>
+        <p className="text-sm text-muted-foreground mb-4">You've reviewed all your roommate suggestions.</p>
         <Button variant="outline" onClick={onBack}>
           <ChevronLeft className="mr-1 h-4 w-4" /> Back to list
         </Button>
@@ -65,12 +77,23 @@ export function RoommateSwipeCard({ matches, onMessage, onBack }: RoommateSwipeC
       ? "border-warning/40 shadow-warning/20"
       : "border-muted-foreground/20";
 
+  const persistSwipe = async (action: "accepted" | "rejected") => {
+    setProcessing(true);
+    try {
+      onSwipeAction(current.id, action);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleDragEnd = (_: any, info: PanInfo) => {
+    if (processing) return;
     const threshold = 120;
     if (Math.abs(info.offset.x) > threshold) {
       const dir = info.offset.x > 0 ? "like" : "nope";
       setSwipeAction(dir);
       gone.add(currentIndex);
+      persistSwipe(dir === "like" ? "accepted" : "rejected");
       setTimeout(() => {
         setCurrentIndex((i) => i + 1);
         setSwipeAction(null);
@@ -79,8 +102,10 @@ export function RoommateSwipeCard({ matches, onMessage, onBack }: RoommateSwipeC
   };
 
   const handleAction = (action: "like" | "nope") => {
+    if (processing) return;
     setSwipeAction(action);
     gone.add(currentIndex);
+    persistSwipe(action === "like" ? "accepted" : "rejected");
     setTimeout(() => {
       setCurrentIndex((i) => i + 1);
       setSwipeAction(null);
@@ -102,18 +127,16 @@ export function RoommateSwipeCard({ matches, onMessage, onBack }: RoommateSwipeC
           <ChevronLeft className="mr-1 h-4 w-4" /> Back to list
         </Button>
         <span className="text-sm text-muted-foreground font-medium">
-          {currentIndex + 1} / {matches.length}
+          {currentIndex + 1} / {pendingMatches.length}
         </span>
       </div>
 
       {/* Card Stack */}
-      <div className="relative w-full max-w-[340px] h-[520px]">
-        {/* Background card (next) */}
+      <div className="relative w-full max-w-[340px] h-[560px]">
         {next && (
           <div className="absolute inset-0 rounded-2xl bg-card border border-border/50 scale-[0.95] translate-y-3 opacity-50" />
         )}
 
-        {/* Active card */}
         <AnimatePresence mode="popLayout">
           <motion.div
             key={current.id}
@@ -148,17 +171,25 @@ export function RoommateSwipeCard({ matches, onMessage, onBack }: RoommateSwipeC
                 className="absolute inset-0 z-10 pointer-events-none rounded-2xl border-4 border-destructive bg-destructive/5 flex items-center justify-center"
               >
                 <div className="rotate-[20deg] border-4 border-destructive rounded-xl px-6 py-2">
-                  <span className="text-4xl font-black text-destructive tracking-wider">NOPE</span>
+                  <span className="text-4xl font-black text-destructive tracking-wider">PASS</span>
                 </div>
               </motion.div>
 
-              {/* Profile header */}
+              {/* Profile header with photo */}
               <div className="relative gradient-primary px-6 pt-8 pb-14 text-center">
-                <div className="mx-auto mb-3 flex h-24 w-24 items-center justify-center rounded-full bg-primary-foreground/20 border-4 border-primary-foreground/30 backdrop-blur-sm">
-                  <span className="font-display text-3xl font-bold text-primary-foreground">
-                    {getInitials(current.partner_name)}
-                  </span>
-                </div>
+                {current.partner_photo ? (
+                  <img
+                    src={current.partner_photo}
+                    alt={current.partner_name}
+                    className="mx-auto mb-3 h-24 w-24 rounded-full object-cover border-4 border-primary-foreground/30"
+                  />
+                ) : (
+                  <div className="mx-auto mb-3 flex h-24 w-24 items-center justify-center rounded-full bg-primary-foreground/20 border-4 border-primary-foreground/30 backdrop-blur-sm">
+                    <span className="font-display text-3xl font-bold text-primary-foreground">
+                      {getInitials(current.partner_name)}
+                    </span>
+                  </div>
+                )}
                 <h3 className="font-display text-2xl font-bold text-primary-foreground">
                   {current.partner_name}
                 </h3>
@@ -169,7 +200,7 @@ export function RoommateSwipeCard({ matches, onMessage, onBack }: RoommateSwipeC
                 )}
               </div>
 
-              {/* Compatibility ring - floating over the boundary */}
+              {/* Compatibility ring */}
               <div className="flex justify-center -mt-10 relative z-10">
                 <div className={cn("relative h-20 w-20 rounded-full bg-card border-4 shadow-lg flex items-center justify-center", scoreRing)}>
                   <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
@@ -188,44 +219,67 @@ export function RoommateSwipeCard({ matches, onMessage, onBack }: RoommateSwipeC
                 </div>
               </div>
 
-              {/* Card body */}
-              <div className="flex-1 px-5 pt-3 pb-5 flex flex-col gap-3 overflow-y-auto">
+              {/* Card body with details */}
+              <div className="flex-1 px-5 pt-3 pb-5 flex flex-col gap-2.5 overflow-y-auto">
                 <p className="text-center text-xs text-muted-foreground font-medium uppercase tracking-wider">Compatibility</p>
+
+                {/* Profile details */}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {current.partner_faculty && (
+                    <div className="rounded-lg bg-muted/40 px-3 py-2 border border-border/50">
+                      <p className="text-xs text-muted-foreground">Faculty</p>
+                      <p className="font-medium truncate">{current.partner_faculty}</p>
+                    </div>
+                  )}
+                  {current.partner_course && (
+                    <div className="rounded-lg bg-muted/40 px-3 py-2 border border-border/50">
+                      <p className="text-xs text-muted-foreground">Course</p>
+                      <p className="font-medium truncate">{current.partner_course}</p>
+                    </div>
+                  )}
+                  {current.partner_level && (
+                    <div className="rounded-lg bg-muted/40 px-3 py-2 border border-border/50">
+                      <p className="text-xs text-muted-foreground">Level</p>
+                      <p className="font-medium">{current.partner_level}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Preferences */}
+                {current.partner_preferences && current.partner_preferences.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {current.partner_preferences.slice(0, 5).map((pref, i) => (
+                      <Badge key={i} variant="secondary" className="text-xs">{pref}</Badge>
+                    ))}
+                    {current.partner_preferences.length > 5 && (
+                      <Badge variant="outline" className="text-xs">+{current.partner_preferences.length - 5}</Badge>
+                    )}
+                  </div>
+                )}
 
                 {/* AI Insight */}
                 {current.ai_reasoning && (
-                  <div className="rounded-xl bg-muted/40 p-4 border border-border/50">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-primary mb-1.5">
+                  <div className="rounded-xl bg-muted/40 p-3 border border-border/50">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-primary mb-1">
                       <Sparkles className="h-3.5 w-3.5" /> AI Match Insight
                     </div>
-                    <p className="text-sm text-foreground/80 leading-relaxed line-clamp-4">
+                    <p className="text-xs text-foreground/80 leading-relaxed line-clamp-3">
                       "{current.ai_reasoning}"
                     </p>
                   </div>
                 )}
-
-                {/* Status badge */}
-                <div className="flex justify-center">
-                  <Badge variant="outline" className={cn(
-                    "px-4 py-1 text-xs font-semibold",
-                    current.status === "accepted" ? "bg-success/10 text-success border-success/20" :
-                    current.status === "rejected" ? "bg-destructive/10 text-destructive border-destructive/20" :
-                    "bg-warning/10 text-warning border-warning/20"
-                  )}>
-                    {current.status}
-                  </Badge>
-                </div>
               </div>
             </div>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Tinder-style action buttons */}
+      {/* Action buttons */}
       <div className="mt-8 flex items-center gap-5">
         <button
           onClick={() => handleAction("nope")}
-          className="group flex h-16 w-16 items-center justify-center rounded-full border-2 border-destructive/30 bg-card shadow-lg transition-all hover:scale-110 hover:border-destructive hover:shadow-destructive/20 active:scale-95"
+          disabled={processing}
+          className="group flex h-16 w-16 items-center justify-center rounded-full border-2 border-destructive/30 bg-card shadow-lg transition-all hover:scale-110 hover:border-destructive hover:shadow-destructive/20 active:scale-95 disabled:opacity-50"
         >
           <X className="h-7 w-7 text-destructive transition-transform group-hover:scale-110" />
         </button>
@@ -241,7 +295,8 @@ export function RoommateSwipeCard({ matches, onMessage, onBack }: RoommateSwipeC
 
         <button
           onClick={() => handleAction("like")}
-          className="group flex h-16 w-16 items-center justify-center rounded-full border-2 border-success/30 bg-card shadow-lg transition-all hover:scale-110 hover:border-success hover:shadow-success/20 active:scale-95"
+          disabled={processing}
+          className="group flex h-16 w-16 items-center justify-center rounded-full border-2 border-success/30 bg-card shadow-lg transition-all hover:scale-110 hover:border-success hover:shadow-success/20 active:scale-95 disabled:opacity-50"
         >
           <Heart className="h-7 w-7 text-success transition-transform group-hover:scale-110" />
         </button>
