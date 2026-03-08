@@ -42,7 +42,7 @@ const navItems = [
 const tabComponents: Record<string, React.ComponentType> = {
   overview: OverviewTab, clients: ClientsTab, properties: PropertiesTab,
   matches: MatchesTab, roommates: RoommateMatchesTab, commissions: CommissionsTab,
-  inspections: InspectionsTab, admins: AdminsTab, analytics: AnalyticsTab, fees: FeesTab,
+  inspections: InspectionsTab, admins: AdminsTab, analytics: AnalyticsTab, fees: FeesTab, settings: SettingsTab,
 };
 
 function DashboardSidebar({ activeTab, setActiveTab, userRole }: {
