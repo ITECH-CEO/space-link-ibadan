@@ -49,6 +49,8 @@ export default function MyMatches() {
   const [requesting, setRequesting] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
   const [seekingRoommate, setSeekingRoommate] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [clientPhone, setClientPhone] = useState<string | null>(null);
   const [swipeView, setSwipeView] = useState(false);
 
   const fetchAll = async () => {
