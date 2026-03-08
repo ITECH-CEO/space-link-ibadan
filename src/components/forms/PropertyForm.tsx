@@ -262,7 +262,74 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
           <div className="space-y-2">
             <Label>Available Rooms</Label>
             <Input type="number" value={form.available_rooms} onChange={(e) => setForm({ ...form, available_rooms: e.target.value })} />
+        </div>
+      </div>
+
+      {/* Location & Transport */}
+      <div>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Location & Transport</h3>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Distance to Campus (km)</Label>
+            <Input type="number" step="0.1" value={form.distance_to_campus_km} onChange={(e) => setForm({ ...form, distance_to_campus_km: e.target.value })} placeholder="e.g. 1.5" />
           </div>
+          <div className="space-y-2">
+            <Label>Walkability Rating (1-5)</Label>
+            <Select value={form.walkability_rating} onValueChange={(v) => setForm({ ...form, walkability_rating: v })}>
+              <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+              <SelectContent>
+                {[1,2,3,4,5].map(n => <SelectItem key={n} value={String(n)}>{n} — {["Poor","Fair","Good","Very Good","Excellent"][n-1]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Power Reliability (1-5)</Label>
+            <Select value={form.power_rating} onValueChange={(v) => setForm({ ...form, power_rating: v })}>
+              <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+              <SelectContent>
+                {[1,2,3,4,5].map(n => <SelectItem key={n} value={String(n)}>{n} — {["Poor","Fair","Good","Very Good","Excellent"][n-1]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Water Reliability (1-5)</Label>
+            <Select value={form.water_rating} onValueChange={(v) => setForm({ ...form, water_rating: v })}>
+              <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+              <SelectContent>
+                {[1,2,3,4,5].map(n => <SelectItem key={n} value={String(n)}>{n} — {["Poor","Fair","Good","Very Good","Excellent"][n-1]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Transport Options */}
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <Label>Transport Options (to campus)</Label>
+            <Button type="button" variant="outline" size="sm" onClick={() => setForm(prev => ({ ...prev, transport_options: [...prev.transport_options, { mode: "", duration: "", cost_estimate: "" }] }))}>
+              <Plus className="mr-1 h-3 w-3" />Add
+            </Button>
+          </div>
+          {form.transport_options.map((t, i) => (
+            <div key={i} className="grid grid-cols-4 gap-2 items-end">
+              <Select value={t.mode} onValueChange={(v) => { const opts = [...form.transport_options]; opts[i].mode = v; setForm({ ...form, transport_options: opts }); }}>
+                <SelectTrigger><SelectValue placeholder="Mode" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="walk">Walk</SelectItem>
+                  <SelectItem value="bike">Bike/Okada</SelectItem>
+                  <SelectItem value="bus">Bus/Danfo</SelectItem>
+                  <SelectItem value="car">Car/Taxi</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input placeholder="Duration" value={t.duration} onChange={(e) => { const opts = [...form.transport_options]; opts[i].duration = e.target.value; setForm({ ...form, transport_options: opts }); }} />
+              <Input placeholder="₦ Cost" value={t.cost_estimate} onChange={(e) => { const opts = [...form.transport_options]; opts[i].cost_estimate = e.target.value; setForm({ ...form, transport_options: opts }); }} />
+              {form.transport_options.length > 1 && (
+                <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => setForm(prev => ({ ...prev, transport_options: prev.transport_options.filter((_, j) => j !== i) }))}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
