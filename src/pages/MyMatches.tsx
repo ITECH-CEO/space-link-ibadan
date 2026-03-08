@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, MessageSquare, LayoutGrid, Heart, CheckCheck, X } from "lucide-react";
 import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
 import { motion } from "framer-motion";
+import { MatchesTour } from "@/components/tours/MatchesTour";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
