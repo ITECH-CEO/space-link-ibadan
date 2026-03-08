@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
@@ -44,17 +44,32 @@ serve(async (req) => {
       });
     }
 
-    // Update commission status if commission_id in metadata
-    const metadata = data.data.metadata || {};
-    if (metadata.commission_id) {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
+    const metadata = data.data.metadata || {};
+    
+    // Handle different payment types
+    if (metadata.payment_type === "inspection" && metadata.booking_id) {
+      await supabase
+        .from("inspection_bookings")
+        .update({ payment_status: "paid", payment_reference: reference })
+        .eq("id", metadata.booking_id);
+      console.log("Inspection payment verified for booking:", metadata.booking_id);
+    } else if (metadata.payment_type === "roommate_matching" && metadata.roommate_match_id) {
+      await supabase
+        .from("roommate_matches")
+        .update({ payment_status: "paid", payment_reference: reference })
+        .eq("id", metadata.roommate_match_id);
+      console.log("Roommate matching payment verified for match:", metadata.roommate_match_id);
+    } else if (metadata.commission_id) {
+      // Legacy: commission-based payments
       await supabase
         .from("commissions")
         .update({ status: "paid", notes: `Paystack ref: ${reference}` })
         .eq("id", metadata.commission_id);
+      console.log("Commission payment verified:", metadata.commission_id);
     }
 
     return new Response(JSON.stringify({
@@ -62,6 +77,7 @@ serve(async (req) => {
       amount: data.data.amount / 100,
       email: data.data.customer.email,
       reference: data.data.reference,
+      payment_type: metadata.payment_type || "commission",
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

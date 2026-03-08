@@ -10,7 +10,8 @@ import { CommissionsTab } from "@/components/dashboard/CommissionsTab";
 import { AdminsTab } from "@/components/dashboard/AdminsTab";
 import { AnalyticsTab } from "@/components/dashboard/AnalyticsTab";
 import { InspectionsTab } from "@/components/dashboard/InspectionsTab";
-import { Users, Building2, Handshake, DollarSign, ShieldCheck, UserPlus, BarChart3, CalendarDays } from "lucide-react";
+import { FeesTab } from "@/components/dashboard/FeesTab";
+import { Users, Building2, Handshake, DollarSign, ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
@@ -66,6 +67,9 @@ export default function Dashboard() {
             {(isSuperAdmin || isManager) && (
               <TabsTrigger value="analytics"><BarChart3 className="mr-2 h-4 w-4" />Analytics</TabsTrigger>
             )}
+            {isSuperAdmin && (
+              <TabsTrigger value="fees"><Settings className="mr-2 h-4 w-4" />Fees</TabsTrigger>
+            )}
           </TabsList>
           <TabsContent value="clients"><ClientsTab /></TabsContent>
           <TabsContent value="properties"><PropertiesTab /></TabsContent>
@@ -75,6 +79,7 @@ export default function Dashboard() {
           {(isSuperAdmin || isManager) && <TabsContent value="inspections"><InspectionsTab /></TabsContent>}
           {isSuperAdmin && <TabsContent value="admins"><AdminsTab /></TabsContent>}
           {(isSuperAdmin || isManager) && <TabsContent value="analytics"><AnalyticsTab /></TabsContent>}
+          {isSuperAdmin && <TabsContent value="fees"><FeesTab /></TabsContent>}
         </Tabs>
       </main>
     </div>

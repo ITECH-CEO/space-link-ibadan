@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { toast } from "sonner";
-import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, CreditCard, MessageSquare, LayoutGrid } from "lucide-react";
+import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, CreditCard, MessageSquare, LayoutGrid, Lock } from "lucide-react";
 import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
 
 interface MatchWithDetails {
@@ -23,7 +23,13 @@ interface MatchWithDetails {
 interface RoommateMatchDetail {
   id: string; status: string; compatibility_score: number | null;
   ai_reasoning: string | null; partner_name: string; property_name: string | null;
-  partner_user_id?: string;
+  partner_user_id?: string; payment_status?: string;
+}
+
+interface PlatformFee {
+  fee_type: string;
+  amount: number;
+  is_active: boolean;
 }
 
 export default function MyMatches() {
@@ -37,7 +43,23 @@ export default function MyMatches() {
   const [clientId, setClientId] = useState<string | null>(null);
   const [seekingRoommate, setSeekingRoommate] = useState(false);
   const [payingMatchId, setPayingMatchId] = useState<string | null>(null);
+  const [payingRoommateId, setPayingRoommateId] = useState<string | null>(null);
   const [swipeView, setSwipeView] = useState(false);
+  const [fees, setFees] = useState<PlatformFee[]>([]);
+
+  // Fetch platform fees
+  useEffect(() => {
+    const fetchFees = async () => {
+      const { data } = await (supabase as any)
+        .from("platform_fees")
+        .select("fee_type, amount, is_active")
+        .eq("is_active", true);
+      setFees(data || []);
+    };
+    fetchFees();
+  }, []);
+
+  const getFee = (type: string) => fees.find(f => f.fee_type === type);
 
   // Verify Paystack payment on redirect
   useEffect(() => {
@@ -52,13 +74,14 @@ export default function MyMatches() {
           toast.error("Payment verification failed: " + (res.error.message || "Unknown error"));
         } else if (res.data?.verified) {
           toast.success(`Payment of ₦${res.data.amount?.toLocaleString()} verified successfully!`);
+          // Reload to refresh payment statuses
+          setTimeout(() => window.location.reload(), 1500);
         } else {
           toast.error("Payment could not be verified");
         }
       } catch (err: any) {
         toast.error("Payment verification error");
       }
-      // Remove reference from URL
       searchParams.delete("reference");
       searchParams.delete("trxref");
       setSearchParams(searchParams, { replace: true });
@@ -82,7 +105,6 @@ export default function MyMatches() {
         .eq("client_id", client.id)
         .order("compatibility_score", { ascending: false });
 
-      // Get commissions for this client's matches
       const { data: commissions } = await supabase
         .from("commissions")
         .select("id, match_id, status")
@@ -101,10 +123,10 @@ export default function MyMatches() {
         };
       }));
 
-      // Roommate matches - also get partner user_id for messaging
+      // Roommate matches
       const { data: rmData } = await (supabase as any)
         .from("roommate_matches")
-        .select("id, status, compatibility_score, ai_reasoning, client_a_id, client_b_id, properties(property_name)")
+        .select("id, status, compatibility_score, ai_reasoning, client_a_id, client_b_id, payment_status, properties(property_name)")
         .or(`client_a_id.eq.${client.id},client_b_id.eq.${client.id}`)
         .order("compatibility_score", { ascending: false });
 
@@ -121,6 +143,7 @@ export default function MyMatches() {
             ai_reasoning: r.ai_reasoning, partner_name: partner?.name || "—",
             property_name: r.properties?.property_name || null,
             partner_user_id: partner?.user_id,
+            payment_status: r.payment_status,
           };
         }));
       }
@@ -159,7 +182,6 @@ export default function MyMatches() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { toast.error("Not authenticated"); return; }
 
-      // Get commission details for this match
       const match = matches.find(m => m.id === matchId);
       const { data: commission } = await supabase
         .from("commissions")
@@ -176,8 +198,8 @@ export default function MyMatches() {
         body: {
           email: session.user.email,
           amount: commission.amount,
-          callback_url: window.location.href,
-          metadata: { commission_id: commission.id, match_id: matchId },
+          callback_url: window.location.href.split("?")[0],
+          metadata: { commission_id: commission.id, match_id: matchId, payment_type: "match" },
         },
       });
 
@@ -193,6 +215,36 @@ export default function MyMatches() {
     }
   };
 
+  const handlePayRoommate = async (roommateMatchId: string) => {
+    const fee = getFee("roommate_matching");
+    if (!fee) { toast.error("Roommate matching fee not configured"); return; }
+
+    setPayingRoommateId(roommateMatchId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("Not authenticated"); return; }
+
+      const res = await supabase.functions.invoke("paystack-initialize", {
+        body: {
+          email: session.user.email,
+          amount: fee.amount,
+          callback_url: window.location.href.split("?")[0],
+          metadata: { roommate_match_id: roommateMatchId, payment_type: "roommate_matching" },
+        },
+      });
+
+      if (res.error) {
+        toast.error(res.error.message || "Payment initialization failed");
+      } else if (res.data?.authorization_url) {
+        window.location.href = res.data.authorization_url;
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Payment failed");
+    } finally {
+      setPayingRoommateId(null);
+    }
+  };
+
   const messageRoommate = (partnerUserId: string) => {
     navigate(`/messages?to=${partnerUserId}`);
   };
@@ -205,6 +257,8 @@ export default function MyMatches() {
 
   const scoreClass = (s: number | null) =>
     (s ?? 0) >= 70 ? "text-success" : (s ?? 0) >= 50 ? "text-warning" : "text-muted-foreground";
+
+  const roommateMatchFee = getFee("roommate_matching");
 
   return (
     <div className="min-h-screen bg-background">
@@ -264,7 +318,6 @@ export default function MyMatches() {
                             </div>
                           </div>
                         </Link>
-                        {/* Pay Now button for accepted matches */}
                         {m.status === "accepted" && m.commission_status === "pending" && (
                           <Button
                             onClick={(e) => { e.preventDefault(); handlePayNow(m.id); }}
@@ -297,6 +350,11 @@ export default function MyMatches() {
                           ? "You're actively looking for roommates. We'll notify you when we find a match!"
                           : "Request AI-powered roommate matching based on your course, faculty, and preferences."}
                       </p>
+                      {roommateMatchFee && (
+                        <p className="text-xs text-primary mt-1 font-medium">
+                          Matching fee: ₦{roommateMatchFee.amount.toLocaleString()} per match
+                        </p>
+                      )}
                     </div>
                     <Button
                       onClick={requestRoommateMatch}
@@ -341,40 +399,69 @@ export default function MyMatches() {
                     </Button>
                   </div>
                   <div className="space-y-4">
-                    {roommateMatches.map((r) => (
-                      <Card key={r.id} className="transition-shadow hover:shadow-md">
-                        <CardContent className="p-5">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Users className="h-4 w-4 text-primary" />
-                                <h3 className="font-semibold">{r.partner_name}</h3>
+                    {roommateMatches.map((r) => {
+                      const isPaid = r.payment_status === "paid";
+                      const needsPayment = roommateMatchFee && !isPaid;
+                      
+                      return (
+                        <Card key={r.id} className="transition-shadow hover:shadow-md">
+                          <CardContent className="p-5">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Users className="h-4 w-4 text-primary" />
+                                  <h3 className="font-semibold">{r.partner_name}</h3>
+                                  {isPaid && <Badge variant="secondary" className="text-xs bg-success/10 text-success">Paid</Badge>}
+                                </div>
+                                {r.property_name && (
+                                  <p className="text-sm text-muted-foreground mb-1">
+                                    <Building2 className="inline h-3 w-3 mr-1" />Shared interest: {r.property_name}
+                                  </p>
+                                )}
+                                {isPaid && r.ai_reasoning && (
+                                  <p className="text-xs text-muted-foreground mt-2 italic">"{r.ai_reasoning}"</p>
+                                )}
+                                {!isPaid && r.ai_reasoning && (
+                                  <div className="mt-2 relative">
+                                    <p className="text-xs text-muted-foreground italic blur-sm select-none">"{r.ai_reasoning}"</p>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <Lock className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                              {r.property_name && (
-                                <p className="text-sm text-muted-foreground mb-1">
-                                  <Building2 className="inline h-3 w-3 mr-1" />Shared interest: {r.property_name}
-                                </p>
-                              )}
-                              {r.ai_reasoning && <p className="text-xs text-muted-foreground mt-2 italic">"{r.ai_reasoning}"</p>}
+                              <div className="flex flex-col items-end gap-2">
+                                <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
+                                <Badge variant="outline" className={statusColors[r.status] || ""}>{r.status}</Badge>
+                              </div>
                             </div>
-                            <div className="flex flex-col items-end gap-2">
-                              <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
-                              <Badge variant="outline" className={statusColors[r.status] || ""}>{r.status}</Badge>
-                            </div>
-                          </div>
-                          {r.partner_user_id && (
-                            <Button
-                              onClick={() => messageRoommate(r.partner_user_id!)}
-                              variant="outline"
-                              size="sm"
-                              className="mt-3 w-full"
-                            >
-                              <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
+                            
+                            {needsPayment ? (
+                              <Button
+                                onClick={() => handlePayRoommate(r.id)}
+                                disabled={payingRoommateId === r.id}
+                                className="mt-3 w-full gradient-accent text-accent-foreground font-semibold"
+                                size="sm"
+                              >
+                                <CreditCard className="mr-2 h-4 w-4" />
+                                {payingRoommateId === r.id
+                                  ? "Initializing..."
+                                  : `Pay ₦${roommateMatchFee.amount.toLocaleString()} to Unlock Details`}
+                              </Button>
+                            ) : isPaid && r.partner_user_id ? (
+                              <Button
+                                onClick={() => messageRoommate(r.partner_user_id!)}
+                                variant="outline"
+                                size="sm"
+                                className="mt-3 w-full"
+                              >
+                                <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
+                              </Button>
+                            ) : null}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </>
               )}
