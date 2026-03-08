@@ -151,12 +151,6 @@ export default function Properties() {
                 <Users className="h-4 w-4 text-primary" />
                 {p.available_rooms}/{p.total_rooms} rooms
               </span>
-              {minPrice && (
-                <span className="flex items-center gap-1 font-semibold text-primary">
-                  <DollarSign className="h-4 w-4" />
-                  From ₦{minPrice.toLocaleString()}
-                </span>
-              )}
             </div>
             {p.facilities && p.facilities.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-2">
