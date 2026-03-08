@@ -15,6 +15,35 @@ export function PropertiesTab() {
   const [properties, setProperties] = useState<Tables<"properties">[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === properties.length) setSelected(new Set());
+    else setSelected(new Set(properties.map(p => p.id)));
+  };
+
+  const bulkUpdateStatus = async (status: "approved" | "rejected") => {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+    const { error } = await supabase
+      .from("properties")
+      .update({ verification_status: status })
+      .in("id", ids);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(`${ids.length} properties ${status}`);
+      setSelected(new Set());
+      fetchProperties();
+    }
+  };
 
   const fetchProperties = async () => {
     const { data } = await supabase.from("properties").select("*").order("created_at", { ascending: false });
