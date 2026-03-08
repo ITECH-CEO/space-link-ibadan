@@ -23,6 +23,7 @@ import { RentTrackingTab } from "@/components/dashboard/RentTrackingTab";
 import { ComplaintsTab } from "@/components/dashboard/ComplaintsTab";
 import { PlatformComplaintsTab } from "@/components/dashboard/PlatformComplaintsTab";
 import { OccupancyTab } from "@/components/dashboard/OccupancyTab";
+import { SponsorsTab } from "@/components/dashboard/SponsorsTab";
 import {
   LayoutDashboard, Users, Building2, Handshake, Banknote, Wrench,
   ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings,
