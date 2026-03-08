@@ -432,6 +432,7 @@ export default function MyMatches() {
         )}
       </main>
       <WhatsAppButton />
+      <MatchesTour />
     </div>
   );
 }
