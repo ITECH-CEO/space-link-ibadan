@@ -453,6 +453,11 @@ export default function MyMatches() {
           </div>
         )}
 
+        {/* Complaint Tracker */}
+        <div className="mt-6">
+          <ClientComplaintTracker />
+        </div>
+
         {/* Rent Payments Section */}
         <div className="mt-8">
           <ClientRentPayments />
