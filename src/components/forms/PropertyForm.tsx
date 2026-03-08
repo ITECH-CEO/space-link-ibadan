@@ -104,6 +104,13 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
     setVideos((prev) => [...prev, ...valid].slice(0, 3));
   };
 
+  const handlePanoramaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const valid = files.filter((f) => f.type.startsWith("image/") && f.size <= 10 * 1024 * 1024);
+    if (valid.length !== files.length) toast.error("Some files skipped (must be images under 10MB)");
+    setPanoramas((prev) => [...prev, ...valid].slice(0, 5));
+  };
+
   const uploadFiles = async (files: File[], folder: string): Promise<string[]> => {
     const urls: string[] = [];
     for (const file of files) {
