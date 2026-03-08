@@ -12,6 +12,9 @@ serve(async (req) => {
 
   try {
     const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY");
+    console.log("PAYSTACK_SECRET_KEY exists:", !!PAYSTACK_SECRET_KEY);
+    console.log("PAYSTACK_SECRET_KEY starts with sk_:", PAYSTACK_SECRET_KEY?.startsWith("sk_"));
+    console.log("PAYSTACK_SECRET_KEY length:", PAYSTACK_SECRET_KEY?.length);
     if (!PAYSTACK_SECRET_KEY) {
       return new Response(JSON.stringify({ error: "Paystack not configured" }), {
         status: 500,
@@ -46,7 +49,8 @@ serve(async (req) => {
     const data = await response.json();
 
     if (!data.status) {
-      return new Response(JSON.stringify({ error: data.message || "Payment initialization failed" }), {
+      console.error("Paystack error response:", JSON.stringify(data));
+      return new Response(JSON.stringify({ error: data.message || "Payment initialization failed", details: data }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
