@@ -26,6 +26,7 @@ interface LeaseData {
   access_token: string;
   property_id: string;
   room_type_id: string | null;
+  created_at: string;
 }
 
 export default function LeaseView() {
