@@ -121,6 +121,67 @@ export default function PropertyDetail() {
     }
   }, [id, user]);
 
+  // Handle payment redirect verification
+  useEffect(() => {
+    const verifyInspection = searchParams.get("verify_inspection");
+    const reference = searchParams.get("reference") || searchParams.get("trxref");
+    if (!verifyInspection || !reference || !user) return;
+
+    const pendingStr = sessionStorage.getItem("pending_inspection");
+    if (!pendingStr) return;
+
+    const pending = JSON.parse(pendingStr);
+
+    const verify = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("paystack-verify", {
+          body: { reference },
+        });
+
+        if (error || !data?.verified) {
+          toast.error("Payment verification failed. Please contact support.");
+          return;
+        }
+
+        // Create the booking now that payment is verified
+        const { data: bookingData, error: bookError } = await (supabase as any)
+          .from("inspection_bookings")
+          .insert({
+            slot_id: pending.slot_id,
+            property_id: pending.property_id,
+            client_id: pending.client_id,
+            user_id: pending.user_id,
+            payment_status: "paid",
+            payment_reference: reference,
+          })
+          .select("id")
+          .single();
+
+        if (bookError) {
+          toast.error(bookError.message || "Booking failed after payment");
+        } else {
+          toast.success("Payment successful! Inspection booked.");
+          setBookingInfo({
+            id: bookingData.id,
+            status: "confirmed",
+            slot_id: pending.slot_id,
+            slot_date: pending.slot_date,
+            slot_time: pending.slot_time,
+          });
+        }
+
+        sessionStorage.removeItem("pending_inspection");
+      } catch (err: any) {
+        toast.error(err.message || "Verification error");
+      }
+
+      // Clean URL
+      setSearchParams({}, { replace: true });
+    };
+
+    verify();
+  }, [searchParams, user]);
+
   const availableDates = [...new Set(slots.map((s) => s.slot_date))];
   const slotsForDate = selectedDate
     ? slots.filter((s) => s.slot_date === format(selectedDate, "yyyy-MM-dd") && s.current_bookings < s.max_bookings)
