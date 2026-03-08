@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin, Home, DollarSign } from "lucide-react";
+import { Search, MapPin, Home, Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -50,7 +50,7 @@ export function HeroSearch() {
           {/* Budget */}
           <Select value={budget} onValueChange={setBudget}>
             <SelectTrigger className="border-0 bg-muted/50 h-12">
-              <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
+              <Banknote className="mr-2 h-4 w-4 text-muted-foreground" />
               <SelectValue placeholder="Budget" />
             </SelectTrigger>
             <SelectContent>

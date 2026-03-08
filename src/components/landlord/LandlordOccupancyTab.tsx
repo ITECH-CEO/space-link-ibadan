@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Users, DollarSign, TrendingUp } from "lucide-react";
+import { Building2, Users, Banknote, TrendingUp } from "lucide-react";
 
 interface PropertySummary {
   id: string;
@@ -109,7 +109,7 @@ export function LandlordOccupancyTab() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-accent/10 p-2.5">
-                <DollarSign className="h-5 w-5 text-accent-foreground" />
+                <Banknote className="h-5 w-5 text-accent-foreground" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Placed Tenants</p>

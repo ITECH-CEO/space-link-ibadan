@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { toast } from "sonner";
-import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, MessageSquare, LayoutGrid, Heart, CheckCheck, X } from "lucide-react";
+import { Handshake, Building2, MapPin, Banknote, Users, Sparkles, Loader2, MessageSquare, LayoutGrid, Heart, CheckCheck, X } from "lucide-react";
 import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
 import { motion } from "framer-motion";
 import { MatchesTour } from "@/components/tours/MatchesTour";
@@ -245,7 +245,7 @@ export default function MyMatches() {
                                   {m.room_type_name && <Badge variant="secondary" className="text-xs">{m.room_type_name}</Badge>}
                                   {m.room_type_price && (
                                     <span className="flex items-center gap-1 font-medium text-primary">
-                                      <DollarSign className="h-3 w-3" />₦{m.room_type_price.toLocaleString()}
+                                      ₦{m.room_type_price.toLocaleString()}
                                     </span>
                                   )}
                                 </div>

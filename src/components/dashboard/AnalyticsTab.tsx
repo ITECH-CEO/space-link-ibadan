@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from "recharts";
-import { Building2, Users, Handshake, DollarSign, TrendingUp, CheckCircle } from "lucide-react";
+import { Building2, Users, Handshake, Banknote, TrendingUp, CheckCircle } from "lucide-react";
 
 interface Stats {
   totalProperties: number;
@@ -110,7 +110,7 @@ export function AnalyticsTab() {
     { label: "Matches", value: stats.totalMatches, icon: Handshake, color: "text-primary" },
     { label: "Accepted", value: stats.acceptedMatches, icon: CheckCircle, color: "text-success" },
     { label: "Occupancy", value: `${stats.occupancyRate}%`, icon: TrendingUp, color: "text-accent-foreground" },
-    { label: "Revenue", value: `₦${stats.paidCommissions.toLocaleString()}`, icon: DollarSign, color: "text-success" },
+    { label: "Revenue", value: `₦${stats.paidCommissions.toLocaleString()}`, icon: Banknote, color: "text-success" },
   ];
 
   return (

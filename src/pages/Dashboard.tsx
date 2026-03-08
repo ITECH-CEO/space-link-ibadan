@@ -19,7 +19,7 @@ import { AnalyticsTab } from "@/components/dashboard/AnalyticsTab";
 import { InspectionsTab } from "@/components/dashboard/InspectionsTab";
 import { FeesTab } from "@/components/dashboard/FeesTab";
 import {
-  LayoutDashboard, Users, Building2, Handshake, DollarSign,
+  LayoutDashboard, Users, Building2, Handshake, Banknote,
   ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings,
   LogOut, Moon, Sun, Home, ChevronRight,
 } from "lucide-react";
@@ -30,7 +30,7 @@ const navItems = [
   { key: "properties", label: "Properties", icon: Building2, roles: ["super_admin", "manager", "verifier"] },
   { key: "matches", label: "Matches", icon: Handshake, roles: ["super_admin", "manager"] },
   { key: "roommates", label: "Roommates", icon: UserPlus, roles: ["super_admin", "manager"] },
-  { key: "commissions", label: "Commissions", icon: DollarSign, roles: ["super_admin", "manager"] },
+  { key: "commissions", label: "Commissions", icon: Banknote, roles: ["super_admin", "manager"] },
   { key: "inspections", label: "Inspections", icon: CalendarDays, roles: ["super_admin", "manager"] },
   { key: "admins", label: "Admins", icon: ShieldCheck, roles: ["super_admin"] },
   { key: "analytics", label: "Analytics", icon: BarChart3, roles: ["super_admin", "manager"] },

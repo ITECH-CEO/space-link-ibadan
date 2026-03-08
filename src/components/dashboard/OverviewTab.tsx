@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Users, Handshake, DollarSign, TrendingUp, Clock, CheckCircle, AlertTriangle, ArrowUpRight } from "lucide-react";
+import { Building2, Users, Handshake, Banknote, TrendingUp, Clock, CheckCircle, AlertTriangle, ArrowUpRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
 
@@ -69,7 +69,7 @@ export function OverviewTab() {
         { label: "Properties", value: props.length, icon: Building2, color: "text-primary", bgColor: "bg-primary/10", trend: `${pendingProps} pending` },
         { label: "Clients", value: cls.length, icon: Users, color: "text-accent", bgColor: "bg-accent/10", trend: `${pendingClients} unverified` },
         { label: "Matches", value: mts.filter(m => m.status === "accepted").length, icon: Handshake, color: "text-success", bgColor: "bg-success/10", trend: `${mts.filter(m => m.status === "pending").length} pending` },
-        { label: "Revenue", value: `₦${revenue.toLocaleString()}`, icon: DollarSign, color: "text-primary", bgColor: "bg-primary/10", trend: `${cms.filter(c => c.status === "pending").length} unpaid` },
+        { label: "Revenue", value: `₦${revenue.toLocaleString()}`, icon: Banknote, color: "text-primary", bgColor: "bg-primary/10", trend: `${cms.filter(c => c.status === "pending").length} unpaid` },
         { label: "Occupancy", value: `${occupancy}%`, icon: TrendingUp, color: "text-success", bgColor: "bg-success/10" },
         { label: "Inspections", value: insp.length, icon: Clock, color: "text-accent", bgColor: "bg-accent/10", trend: `${insp.filter(i => i.status === "confirmed").length} upcoming` },
       ]);
@@ -106,7 +106,7 @@ export function OverviewTab() {
   }, []);
 
   const typeIcons: Record<string, React.ElementType> = {
-    property: Building2, client: Users, match: Handshake, commission: DollarSign, inspection: Clock,
+    property: Building2, client: Users, match: Handshake, commission: Banknote, inspection: Clock,
   };
 
   const typeColors: Record<string, string> = {

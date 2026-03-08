@@ -8,7 +8,7 @@ import { LandlordOccupancyTab } from "@/components/landlord/LandlordOccupancyTab
 import { LandlordPaymentsTab } from "@/components/landlord/LandlordPaymentsTab";
 import { LandlordMaintenanceTab } from "@/components/landlord/LandlordMaintenanceTab";
 import { LandlordInspectionsTab } from "@/components/landlord/LandlordInspectionsTab";
-import { Building2, DollarSign, Wrench, CalendarDays, Bell, Phone, MessageSquare } from "lucide-react";
+import { Building2, Banknote, Wrench, CalendarDays, Bell, Phone, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function LandlordDashboard() {
@@ -76,7 +76,7 @@ export default function LandlordDashboard() {
             <TabsList className="mb-6 flex-wrap">
               <TabsTrigger value="occupancy"><Building2 className="mr-2 h-4 w-4" />Occupancy</TabsTrigger>
               <TabsTrigger value="inspections"><CalendarDays className="mr-2 h-4 w-4" />Inspections</TabsTrigger>
-              <TabsTrigger value="payments"><DollarSign className="mr-2 h-4 w-4" />Payments</TabsTrigger>
+              <TabsTrigger value="payments"><Banknote className="mr-2 h-4 w-4" />Payments</TabsTrigger>
               <TabsTrigger value="complaints"><Wrench className="mr-2 h-4 w-4" />Complaints</TabsTrigger>
             </TabsList>
             <TabsContent value="occupancy"><LandlordOccupancyTab /></TabsContent>

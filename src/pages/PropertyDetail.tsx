@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { MapPin, Users, Phone, Mail, ArrowLeft, DollarSign, Building2, CalendarDays, Clock, CheckCircle, XCircle, Star, MessageSquare, Footprints, Bus, Zap, Droplets, Navigation, Bike, Car } from "lucide-react";
+import { MapPin, Users, Phone, Mail, ArrowLeft, Banknote, Building2, CalendarDays, Clock, CheckCircle, XCircle, Star, MessageSquare, Footprints, Bus, Zap, Droplets, Navigation, Bike, Car } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -544,7 +544,7 @@ export default function PropertyDetail() {
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold">{rt.name}</h3>
                       <span className="flex items-center gap-1 text-lg font-bold text-primary">
-                        <DollarSign className="h-4 w-4" />₦{rt.price.toLocaleString()}
+                        ₦{rt.price.toLocaleString()}
                       </span>
                     </div>
                     {rt.description && <p className="text-sm text-muted-foreground mb-2">{rt.description}</p>}
