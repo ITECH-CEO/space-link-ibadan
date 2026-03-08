@@ -358,7 +358,7 @@ export default function MyMatches() {
                     <h3 className="font-display font-semibold text-sm text-muted-foreground">
                       Pending ({pendingRoommates.filter(m => m.my_status === "pending").length} to review)
                     </h3>
-                    <Button variant="outline" size="sm" onClick={() => setSwipeView(true)} className="text-sm">
+                    <Button variant="outline" size="sm" onClick={() => setSwipeView(true)} className="text-sm" data-tour="roommate-swipe">
                       <LayoutGrid className="mr-2 h-4 w-4" /> Swipe View
                     </Button>
                   </div>
