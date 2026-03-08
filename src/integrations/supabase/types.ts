@@ -225,6 +225,54 @@ export type Database = {
           },
         ]
       }
+      inspection_feedback: {
+        Row: {
+          booking_id: string
+          comments: string | null
+          created_at: string
+          id: string
+          interested: boolean | null
+          property_id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          booking_id: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          interested?: boolean | null
+          property_id: string
+          rating: number
+          user_id: string
+        }
+        Update: {
+          booking_id?: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          interested?: boolean | null
+          property_id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_feedback_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_feedback_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspection_slots: {
         Row: {
           created_at: string

@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { CalendarDays, Plus, Trash2, Clock, Users } from "lucide-react";
+import { CalendarDays, Plus, Trash2, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 
@@ -37,6 +37,15 @@ interface Booking {
   slot_time?: string;
 }
 
+const STATUS_OPTIONS = ["confirmed", "completed", "no_show", "cancelled"];
+
+const statusBadgeClass: Record<string, string> = {
+  confirmed: "bg-success/10 text-success border-success/20",
+  completed: "bg-primary/10 text-primary border-primary/20",
+  no_show: "bg-warning/10 text-warning border-warning/20",
+  cancelled: "bg-destructive/10 text-destructive border-destructive/20",
+};
+
 export function InspectionsTab() {
   const { user } = useAuth();
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -45,7 +54,6 @@ export function InspectionsTab() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // New slot form
   const [newSlot, setNewSlot] = useState({ property_id: "", slot_date: "", slot_time: "", max_bookings: "3" });
 
   const fetchData = async () => {
@@ -62,7 +70,6 @@ export function InspectionsTab() {
     setSlots(formattedSlots);
     setProperties(propsData || []);
 
-    // Enrich bookings
     if (bookingsData && bookingsData.length > 0) {
       const clientIds = [...new Set(bookingsData.map((b: any) => b.client_id))] as string[];
       const { data: clients } = await supabase.from("clients").select("id, full_name").in("id", clientIds);
@@ -113,6 +120,18 @@ export function InspectionsTab() {
     const { error } = await (supabase as any).from("inspection_slots").delete().eq("id", id);
     if (error) toast.error(error.message);
     else { toast.success("Slot removed"); fetchData(); }
+  };
+
+  const updateBookingStatus = async (bookingId: string, newStatus: string) => {
+    const { error } = await (supabase as any)
+      .from("inspection_bookings")
+      .update({ status: newStatus })
+      .eq("id", bookingId);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(`Status updated to ${newStatus}`);
+      fetchData();
+    }
   };
 
   return (
@@ -209,7 +228,7 @@ export function InspectionsTab() {
         </CardContent>
       </Card>
 
-      {/* Bookings */}
+      {/* Bookings with status management */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -240,9 +259,18 @@ export function InspectionsTab() {
                       <TableCell>{b.slot_date || "—"}</TableCell>
                       <TableCell>{b.slot_time?.slice(0, 5) || "—"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="bg-success/10 text-success border-success/20 capitalize">
-                          {b.status}
-                        </Badge>
+                        <Select value={b.status} onValueChange={(v) => updateBookingStatus(b.id, v)}>
+                          <SelectTrigger className="w-[130px] h-8">
+                            <Badge variant="outline" className={`${statusBadgeClass[b.status] || ""} capitalize`}>
+                              {b.status.replace("_", " ")}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUS_OPTIONS.map((s) => (
+                              <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {format(new Date(b.created_at), "PP")}
