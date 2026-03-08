@@ -1,0 +1,2 @@
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS management_type text NOT NULL DEFAULT 'managed';
+COMMENT ON COLUMN public.properties.management_type IS 'managed = fully managed by MyCrib.ng platform, listed = only listed/advertised by the landlord';

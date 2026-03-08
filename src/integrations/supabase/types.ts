@@ -788,6 +788,7 @@ export type Database = {
           latitude: number | null
           location: string | null
           longitude: number | null
+          management_type: string
           owner_user_id: string | null
           panorama_photos: string[] | null
           photo_check: boolean | null
@@ -820,6 +821,7 @@ export type Database = {
           latitude?: number | null
           location?: string | null
           longitude?: number | null
+          management_type?: string
           owner_user_id?: string | null
           panorama_photos?: string[] | null
           photo_check?: boolean | null
@@ -852,6 +854,7 @@ export type Database = {
           latitude?: number | null
           location?: string | null
           longitude?: number | null
+          management_type?: string
           owner_user_id?: string | null
           panorama_photos?: string[] | null
           photo_check?: boolean | null
