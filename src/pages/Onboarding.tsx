@@ -330,6 +330,7 @@ export default function Onboarding() {
           </Card>
         </motion.div>
       </main>
+      <OnboardingTour />
     </div>
   );
 }
