@@ -7,13 +7,16 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { HeroSearch } from "@/components/HeroSearch";
+import { CampusCards } from "@/components/CampusCards";
+import { SuccessStories } from "@/components/SuccessStories";
 import mycribLogo from "@/assets/mycrib-logo.png";
 
 const features = [
-  { icon: Users, title: "Student Registration", desc: "Quick onboarding with ID verification, guarantor info, and preference tags." },
-  { icon: Building2, title: "Property Listings", desc: "Hostels, apartments, and shared rooms with detailed facility info." },
-  { icon: Handshake, title: "Smart Matching", desc: "AI-powered matching based on budget, preferences, and compatibility." },
-  { icon: Shield, title: "Verified & Secure", desc: "Multi-level verification for students and properties. Admin dashboard for oversight." },
+  { icon: Users, title: "Student Registration", desc: "Quick onboarding with ID verification, guarantor info, and preference tags.", step: "01" },
+  { icon: Building2, title: "Browse Properties", desc: "Hostels, apartments, and shared rooms with photos, prices, and facilities.", step: "02" },
+  { icon: Handshake, title: "Get Matched", desc: "AI-powered matching based on budget, preferences, and compatibility.", step: "03" },
+  { icon: Shield, title: "Move In Safely", desc: "Verified properties, secure payments, and full admin oversight.", step: "04" },
 ];
 
 export default function Index() {
@@ -42,8 +45,8 @@ export default function Index() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden gradient-hero py-20 md:py-32">
+      {/* Hero with Search Bar */}
+      <section className="relative overflow-hidden gradient-hero py-20 md:py-28">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 50%, hsl(224 76% 48% / 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 50%, hsl(25 95% 53% / 0.2) 0%, transparent 50%)" }} />
         <div className="container relative z-10">
           <motion.div
@@ -56,21 +59,16 @@ export default function Index() {
             <h1 className="mb-4 font-display text-4xl font-bold leading-tight text-primary-foreground md:text-6xl">
               Find Your Perfect <span className="text-accent">Crib</span> in Nigeria
             </h1>
-            <p className="mb-8 text-lg text-primary-foreground/80 md:text-xl">
-              Verified. Secure. Connected. Browse verified hostels, apartments, and find compatible roommates.
+            <p className="mb-2 text-lg text-primary-foreground/80 md:text-xl">
+              Search verified hostels, apartments, and shared rooms near your campus.
             </p>
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <Link to="/auth?mode=signup">
-                <Button size="lg" className="gradient-accent text-accent-foreground font-semibold px-8 text-lg">
-                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link to="/properties">
-                <Button size="lg" variant="outline" className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 px-8 text-lg">
-                  Browse Properties
-                </Button>
-              </Link>
-            </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <HeroSearch />
           </motion.div>
         </div>
       </section>
@@ -96,12 +94,15 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-20">
+      {/* Campus Cards */}
+      <CampusCards />
+
+      {/* How it Works */}
+      <section className="py-20 bg-card">
         <div className="container">
-         <div className="mx-auto mb-12 max-w-2xl text-center">
+          <div className="mx-auto mb-12 max-w-2xl text-center">
             <h2 className="mb-4 font-display text-3xl font-bold">How MyCrib Works</h2>
-            <p className="text-muted-foreground">From registration to moving in — we handle everything.</p>
+            <p className="text-muted-foreground">From registration to moving in — 4 simple steps.</p>
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {features.map((f, i) => (
@@ -112,7 +113,8 @@ export default function Index() {
                 transition={{ delay: i * 0.1 }}
                 viewport={{ once: true }}
               >
-                <Card className="h-full border-0 bg-muted/50 transition-shadow hover:shadow-lg">
+                <Card className="h-full border-0 bg-muted/50 transition-shadow hover:shadow-lg relative overflow-hidden">
+                  <div className="absolute top-3 right-3 font-display text-4xl font-bold text-primary/10">{f.step}</div>
                   <CardContent className="pt-6">
                     <div className="mb-4 inline-flex rounded-xl gradient-primary p-3">
                       <f.icon className="h-6 w-6 text-primary-foreground" />
@@ -127,21 +129,31 @@ export default function Index() {
         </div>
       </section>
 
+      {/* Success Stories */}
+      <SuccessStories />
+
       {/* CTA */}
-       <section className="gradient-primary py-16">
+      <section className="gradient-primary py-16">
         <div className="container text-center">
           <h2 className="mb-4 font-display text-3xl font-bold text-primary-foreground">Ready to Find Your Crib?</h2>
           <p className="mb-8 text-primary-foreground/80">Join thousands who found their perfect accommodation through MyCrib.ng.</p>
-          <Link to="/auth?mode=signup">
-            <Button size="lg" className="gradient-accent text-accent-foreground font-semibold px-8">
-              Sign Up Now <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <Link to="/auth?mode=signup">
+              <Button size="lg" className="gradient-accent text-accent-foreground font-semibold px-8">
+                Sign Up Now <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link to="/properties">
+              <Button size="lg" variant="outline" className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 px-8">
+                Browse Properties
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-       <footer className="border-t bg-card py-8">
+      <footer className="border-t bg-card py-8">
         <div className="container flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2">
             <img src={mycribLogo} alt="MyCrib.ng" className="h-8 w-8 rounded-lg object-contain" />
@@ -150,7 +162,7 @@ export default function Index() {
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} MyCrib.ng — Verified. Secure. Connected.
           </p>
-           <div className="flex items-center gap-1 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" /> Nigeria
           </div>
         </div>

@@ -10,7 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { toast } from "sonner";
-import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, CreditCard, MessageSquare } from "lucide-react";
+import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, CreditCard, MessageSquare, LayoutGrid } from "lucide-react";
+import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
@@ -36,6 +37,7 @@ export default function MyMatches() {
   const [clientId, setClientId] = useState<string | null>(null);
   const [seekingRoommate, setSeekingRoommate] = useState(false);
   const [payingMatchId, setPayingMatchId] = useState<string | null>(null);
+  const [swipeView, setSwipeView] = useState(false);
 
   // Verify Paystack payment on redirect
   useEffect(() => {
@@ -320,44 +322,61 @@ export default function MyMatches() {
                     <p className="text-muted-foreground">Click "Find Roommate" above and make sure your profile has your course and faculty info.</p>
                   </CardContent>
                 </Card>
+              ) : swipeView ? (
+                <RoommateSwipeCard
+                  matches={roommateMatches}
+                  onMessage={(userId) => messageRoommate(userId)}
+                  onBack={() => setSwipeView(false)}
+                />
               ) : (
-                <div className="space-y-4">
-                  {roommateMatches.map((r) => (
-                    <Card key={r.id} className="transition-shadow hover:shadow-md">
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Users className="h-4 w-4 text-primary" />
-                              <h3 className="font-semibold">{r.partner_name}</h3>
+                <>
+                  <div className="flex justify-end mb-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSwipeView(true)}
+                      className="text-sm"
+                    >
+                      <LayoutGrid className="mr-2 h-4 w-4" /> Swipe View
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    {roommateMatches.map((r) => (
+                      <Card key={r.id} className="transition-shadow hover:shadow-md">
+                        <CardContent className="p-5">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Users className="h-4 w-4 text-primary" />
+                                <h3 className="font-semibold">{r.partner_name}</h3>
+                              </div>
+                              {r.property_name && (
+                                <p className="text-sm text-muted-foreground mb-1">
+                                  <Building2 className="inline h-3 w-3 mr-1" />Shared interest: {r.property_name}
+                                </p>
+                              )}
+                              {r.ai_reasoning && <p className="text-xs text-muted-foreground mt-2 italic">"{r.ai_reasoning}"</p>}
                             </div>
-                            {r.property_name && (
-                              <p className="text-sm text-muted-foreground mb-1">
-                                <Building2 className="inline h-3 w-3 mr-1" />Shared interest: {r.property_name}
-                              </p>
-                            )}
-                            {r.ai_reasoning && <p className="text-xs text-muted-foreground mt-2 italic">"{r.ai_reasoning}"</p>}
+                            <div className="flex flex-col items-end gap-2">
+                              <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
+                              <Badge variant="outline" className={statusColors[r.status] || ""}>{r.status}</Badge>
+                            </div>
                           </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <div className={`text-lg font-bold ${scoreClass(r.compatibility_score)}`}>{r.compatibility_score ?? 0}%</div>
-                            <Badge variant="outline" className={statusColors[r.status] || ""}>{r.status}</Badge>
-                          </div>
-                        </div>
-                        {/* Message roommate button */}
-                        {r.partner_user_id && (
-                          <Button
-                            onClick={() => messageRoommate(r.partner_user_id!)}
-                            variant="outline"
-                            size="sm"
-                            className="mt-3 w-full"
-                          >
-                            <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                          {r.partner_user_id && (
+                            <Button
+                              onClick={() => messageRoommate(r.partner_user_id!)}
+                              variant="outline"
+                              size="sm"
+                              className="mt-3 w-full"
+                            >
+                              <MessageSquare className="mr-2 h-4 w-4" /> Message {r.partner_name}
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </>
               )}
             </TabsContent>
           </Tabs>

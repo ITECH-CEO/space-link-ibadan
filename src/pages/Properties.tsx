@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
@@ -15,6 +15,7 @@ import { Building2, MapPin, Users, Search, DollarSign, SlidersHorizontal, X, Hea
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { PropertyMap } from "@/components/PropertyMap";
+import { PropertyCarousel } from "@/components/PropertyCarousel";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
@@ -22,9 +23,10 @@ interface PropertyWithRooms extends Tables<"properties"> {
 
 export default function Properties() {
   const { user } = useAuth();
+  const [urlParams] = useSearchParams();
   const [properties, setProperties] = useState<PropertyWithRooms[]>([]);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [search, setSearch] = useState(urlParams.get("search") || "");
+  const [typeFilter, setTypeFilter] = useState(urlParams.get("type") || "all");
   const [maxPrice, setMaxPrice] = useState<number>(500000);
   const [facilityFilter, setFacilityFilter] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -110,24 +112,31 @@ export default function Properties() {
     return (
       <Link key={p.id} to={`/property/${p.id}`}>
         <Card className="overflow-hidden transition-shadow hover:shadow-lg cursor-pointer h-full">
-          <div className="gradient-primary p-4">
-            <div className="flex items-center justify-between">
-              <Badge variant="outline" className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 capitalize">
+          {/* Photo carousel */}
+          <div className="relative">
+            <PropertyCarousel photos={p.photos || []} alt={p.property_name} />
+            <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+              <Badge variant="outline" className="bg-card/80 backdrop-blur-sm text-foreground border-border capitalize shadow-sm">
                 {p.property_type}
               </Badge>
-              <div className="flex items-center gap-2">
-                <VerificationBadge status={p.verification_status} />
-                {user && (
-                  <button
-                    onClick={(e) => toggleSave(p.id, e)}
-                    disabled={savingId === p.id}
-                    className="p-1 rounded-full hover:bg-primary-foreground/20 transition-colors"
-                  >
-                    <Heart className={`h-4 w-4 ${savedIds.has(p.id) ? "fill-destructive text-destructive" : "text-primary-foreground"}`} />
-                  </button>
-                )}
-              </div>
+              <VerificationBadge status={p.verification_status} />
             </div>
+            {user && (
+              <button
+                onClick={(e) => toggleSave(p.id, e)}
+                disabled={savingId === p.id}
+                className="absolute top-3 right-3 z-10 p-2 rounded-full bg-card/60 backdrop-blur-sm hover:bg-card/90 transition-colors shadow-sm"
+              >
+                <Heart className={`h-4 w-4 ${savedIds.has(p.id) ? "fill-destructive text-destructive" : "text-foreground"}`} />
+              </button>
+            )}
+            {minPrice && (
+              <div className="absolute bottom-3 left-3 z-10">
+                <span className="rounded-lg bg-card/90 backdrop-blur-sm px-3 py-1.5 font-display text-sm font-bold text-foreground shadow-sm">
+                  From ₦{minPrice.toLocaleString()}<span className="text-xs font-normal text-muted-foreground">/yr</span>
+                </span>
+              </div>
+            )}
           </div>
           <CardContent className="pt-4">
             <h3 className="mb-1 font-display text-lg font-semibold">{p.property_name}</h3>
@@ -142,12 +151,6 @@ export default function Properties() {
                 <Users className="h-4 w-4 text-primary" />
                 {p.available_rooms}/{p.total_rooms} rooms
               </span>
-              {minPrice && (
-                <span className="flex items-center gap-1 font-semibold text-primary">
-                  <DollarSign className="h-4 w-4" />
-                  From ₦{minPrice.toLocaleString()}
-                </span>
-              )}
             </div>
             {p.facilities && p.facilities.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-2">
