@@ -200,6 +200,8 @@ export default function MyMatches() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container max-w-4xl py-8">
+        <WelcomeBanner isTenant={isTenant} clientName={clientName} />
+
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <h1 className="font-display text-3xl font-bold">My Dashboard</h1>
           <p className="text-muted-foreground">
