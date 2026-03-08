@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { CalendarDays, Clock, Check, MapPin, Building2, ArrowLeft, ArrowRight, Loader2, Shield } from "lucide-react";
+import { PaymentDetails } from "@/components/PaymentDetails";
 import { InspectionTour } from "@/components/tours/InspectionTour";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -249,6 +250,8 @@ export function InspectionBookingWizard({
               <span className="font-medium">{selectedSlot.slot_time.slice(0, 5)}</span>
             </div>
           </div>
+
+          <PaymentDetails label="Transfer inspection fee to" />
 
           <div className="flex justify-between pt-2">
             <Button variant="ghost" onClick={goBack}>

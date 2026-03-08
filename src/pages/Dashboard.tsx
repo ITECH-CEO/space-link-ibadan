@@ -18,6 +18,7 @@ import { AdminsTab } from "@/components/dashboard/AdminsTab";
 import { AnalyticsTab } from "@/components/dashboard/AnalyticsTab";
 import { InspectionsTab } from "@/components/dashboard/InspectionsTab";
 import { FeesTab } from "@/components/dashboard/FeesTab";
+import { SettingsTab } from "@/components/dashboard/SettingsTab";
 import {
   LayoutDashboard, Users, Building2, Handshake, Banknote,
   ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings,
@@ -35,12 +36,13 @@ const navItems = [
   { key: "admins", label: "Admins", icon: ShieldCheck, roles: ["super_admin"] },
   { key: "analytics", label: "Analytics", icon: BarChart3, roles: ["super_admin", "manager"] },
   { key: "fees", label: "Fees", icon: Settings, roles: ["super_admin"] },
+  { key: "settings", label: "Settings", icon: Settings, roles: ["super_admin"] },
 ];
 
 const tabComponents: Record<string, React.ComponentType> = {
   overview: OverviewTab, clients: ClientsTab, properties: PropertiesTab,
   matches: MatchesTab, roommates: RoommateMatchesTab, commissions: CommissionsTab,
-  inspections: InspectionsTab, admins: AdminsTab, analytics: AnalyticsTab, fees: FeesTab,
+  inspections: InspectionsTab, admins: AdminsTab, analytics: AnalyticsTab, fees: FeesTab, settings: SettingsTab,
 };
 
 function DashboardSidebar({ activeTab, setActiveTab, userRole }: {
