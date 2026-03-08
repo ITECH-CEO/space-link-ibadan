@@ -136,12 +136,16 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
       // Upload media
       let photoUrls: string[] = [];
       let videoUrls: string[] = [];
+      let panoramaUrls: string[] = [];
 
       if (photos.length > 0) {
         photoUrls = await uploadFiles(photos, "photos");
       }
       if (videos.length > 0) {
         videoUrls = await uploadFiles(videos, "videos");
+      }
+      if (panoramas.length > 0) {
+        panoramaUrls = await uploadFiles(panoramas, "panoramas");
       }
 
       setUploadProgress("");
