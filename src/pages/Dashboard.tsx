@@ -2,6 +2,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OverviewTab } from "@/components/dashboard/OverviewTab";
 import { ClientsTab } from "@/components/dashboard/ClientsTab";
 import { PropertiesTab } from "@/components/dashboard/PropertiesTab";
 import { MatchesTab } from "@/components/dashboard/MatchesTab";
@@ -11,7 +12,7 @@ import { AdminsTab } from "@/components/dashboard/AdminsTab";
 import { AnalyticsTab } from "@/components/dashboard/AnalyticsTab";
 import { InspectionsTab } from "@/components/dashboard/InspectionsTab";
 import { FeesTab } from "@/components/dashboard/FeesTab";
-import { Users, Building2, Handshake, DollarSign, ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Building2, Handshake, DollarSign, ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
@@ -22,7 +23,6 @@ export default function Dashboard() {
 
   const isSuperAdmin = userRole === "super_admin";
   const isManager = userRole === "manager";
-  const isVerifier = userRole === "verifier";
 
   const roleLabel = userRole.replace("_", " ");
 
@@ -45,8 +45,9 @@ export default function Dashboard() {
             {roleLabel}
           </Badge>
         </div>
-        <Tabs defaultValue="clients">
+        <Tabs defaultValue="overview">
           <TabsList className="mb-6 flex-wrap">
+            <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" />Overview</TabsTrigger>
             <TabsTrigger value="clients"><Users className="mr-2 h-4 w-4" />Clients</TabsTrigger>
             <TabsTrigger value="properties"><Building2 className="mr-2 h-4 w-4" />Properties</TabsTrigger>
             {(isSuperAdmin || isManager) && (
@@ -71,6 +72,7 @@ export default function Dashboard() {
               <TabsTrigger value="fees"><Settings className="mr-2 h-4 w-4" />Fees</TabsTrigger>
             )}
           </TabsList>
+          <TabsContent value="overview"><OverviewTab /></TabsContent>
           <TabsContent value="clients"><ClientsTab /></TabsContent>
           <TabsContent value="properties"><PropertiesTab /></TabsContent>
           {(isSuperAdmin || isManager) && <TabsContent value="matches"><MatchesTab /></TabsContent>}

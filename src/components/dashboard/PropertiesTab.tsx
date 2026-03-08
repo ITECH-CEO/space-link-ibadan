@@ -7,14 +7,44 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PropertyForm } from "@/components/forms/PropertyForm";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, CheckCircle, XCircle } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 export function PropertiesTab() {
   const [properties, setProperties] = useState<Tables<"properties">[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === properties.length) setSelected(new Set());
+    else setSelected(new Set(properties.map(p => p.id)));
+  };
+
+  const bulkUpdateStatus = async (status: "approved" | "rejected") => {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+    const { error } = await supabase
+      .from("properties")
+      .update({ verification_status: status })
+      .in("id", ids);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(`${ids.length} properties ${status}`);
+      setSelected(new Set());
+      fetchProperties();
+    }
+  };
 
   const fetchProperties = async () => {
     const { data } = await supabase.from("properties").select("*").order("created_at", { ascending: false });
@@ -32,19 +62,31 @@ export function PropertiesTab() {
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between">
+      <CardHeader className="flex-row items-center justify-between flex-wrap gap-2">
         <CardTitle>Properties</CardTitle>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gradient-primary text-primary-foreground">
-              <Plus className="mr-2 h-4 w-4" />Add Property
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-            <DialogHeader><DialogTitle>Add New Property</DialogTitle></DialogHeader>
-            <PropertyForm onSuccess={() => { setDialogOpen(false); fetchProperties(); }} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          {selected.size > 0 && (
+            <>
+              <Button size="sm" variant="outline" className="text-success border-success/30" onClick={() => bulkUpdateStatus("approved")}>
+                <CheckCircle className="mr-1 h-4 w-4" />Approve ({selected.size})
+              </Button>
+              <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => bulkUpdateStatus("rejected")}>
+                <XCircle className="mr-1 h-4 w-4" />Reject ({selected.size})
+              </Button>
+            </>
+          )}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gradient-primary text-primary-foreground">
+                <Plus className="mr-2 h-4 w-4" />Add Property
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+              <DialogHeader><DialogTitle>Add New Property</DialogTitle></DialogHeader>
+              <PropertyForm onSuccess={() => { setDialogOpen(false); fetchProperties(); }} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -56,6 +98,12 @@ export function PropertiesTab() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={selected.size === properties.length && properties.length > 0}
+                      onCheckedChange={toggleAll}
+                    />
+                  </TableHead>
                   <TableHead>Property</TableHead>
                   <TableHead>Landlord</TableHead>
                   <TableHead>Type</TableHead>
@@ -67,7 +115,10 @@ export function PropertiesTab() {
               </TableHeader>
               <TableBody>
                 {properties.map((p) => (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} data-state={selected.has(p.id) ? "selected" : undefined}>
+                    <TableCell>
+                      <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
+                    </TableCell>
                     <TableCell className="font-medium">{p.property_name}</TableCell>
                     <TableCell>{p.landlord_name}</TableCell>
                     <TableCell className="capitalize">{p.property_type}</TableCell>
