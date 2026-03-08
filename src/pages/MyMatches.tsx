@@ -220,9 +220,7 @@ export default function MyMatches() {
                 animate={{ opacity: 1, y: 0 }}
                 className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6"
               >
-                <QuickAction icon={Home} label="My Room" color="bg-primary/10 text-primary" onClick={() => {
-                  document.getElementById("tab-accommodation")?.click();
-                }} />
+                <QuickAction icon={Home} label="My Room" color="bg-primary/10 text-primary" onClick={() => navigate("/my-accommodation")} />
                 <QuickAction icon={Banknote} label="Payments" color="bg-success/10 text-success" onClick={() => {
                   document.getElementById("tab-payments")?.click();
                 }} />
