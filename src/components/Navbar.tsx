@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { LogOut, LayoutDashboard, Building2, User, Handshake, Home, MessageCircle, Menu, Phone } from "lucide-react";
+import { LogOut, LayoutDashboard, Building2, User, Handshake, Home, MessageCircle, Menu, Phone, HelpCircle } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useIsMobile } from "@/hooks/use-mobile";
 import mycribLogo from "@/assets/mycrib-logo.png";
@@ -27,6 +27,9 @@ export function Navbar() {
       <Button variant="ghost" size="sm" onClick={() => navAction("/properties")}>
         <Building2 className="mr-1.5 h-4 w-4" /> Properties
       </Button>
+      <Button variant="ghost" size="sm" onClick={() => navAction("/support")}>
+        <HelpCircle className="mr-1.5 h-4 w-4" /> Support
+      </Button>
       {user ? (
         <>
           {!isAdmin && !isLandlord && (
@@ -39,12 +42,7 @@ export function Navbar() {
           </Button>
           {isLandlord && (
             <Button variant="ghost" size="sm" onClick={() => navAction("/landlord")}>
-              <Home className="mr-1.5 h-4 w-4" /> My Properties
-            </Button>
-          )}
-          {(isLandlord || !isAdmin) && (
-            <Button variant="ghost" size="sm" onClick={() => navAction("/landlord/register")}>
-              <Building2 className="mr-1.5 h-4 w-4" /> {isLandlord ? "Add Property" : "List Property"}
+              <Home className="mr-1.5 h-4 w-4" /> My Dashboard
             </Button>
           )}
           {isAdmin && (
@@ -128,6 +126,10 @@ export function Navbar() {
               <Building2 className="mr-1.5 h-4 w-4" />
               <span className="hidden sm:inline">Properties</span>
             </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/support")}>
+              <HelpCircle className="mr-1.5 h-4 w-4" />
+              <span className="hidden sm:inline">Support</span>
+            </Button>
             {user ? (
               <>
                 {!isAdmin && !isLandlord && (
@@ -143,13 +145,7 @@ export function Navbar() {
                 {isLandlord && (
                   <Button variant="ghost" size="sm" onClick={() => navigate("/landlord")}>
                     <Home className="mr-1.5 h-4 w-4" />
-                    <span className="hidden sm:inline">My Properties</span>
-                  </Button>
-                )}
-                {(isLandlord || !isAdmin) && (
-                  <Button variant="ghost" size="sm" onClick={() => navigate("/landlord/register")}>
-                    <Building2 className="mr-1.5 h-4 w-4" />
-                    <span className="hidden sm:inline">{isLandlord ? "Add Property" : "List Property"}</span>
+                    <span className="hidden sm:inline">My Dashboard</span>
                   </Button>
                 )}
                 {isAdmin && (
