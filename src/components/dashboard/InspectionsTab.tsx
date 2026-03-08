@@ -67,7 +67,7 @@ export function InspectionsTab() {
       const clientIds = [...new Set(bookingsData.map((b: any) => b.client_id))] as string[];
       const { data: clients } = await supabase.from("clients").select("id, full_name").in("id", clientIds);
       const clientMap = new Map((clients || []).map((c) => [c.id, c.full_name]));
-      const slotMap = new Map(formattedSlots.map((s: Slot) => [s.id, s]));
+      const slotMap = new Map<string, Slot>(formattedSlots.map((s: Slot) => [s.id, s]));
 
       setBookings(bookingsData.map((b: any) => {
         const slot = slotMap.get(b.slot_id);
