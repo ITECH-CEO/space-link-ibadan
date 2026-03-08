@@ -317,7 +317,7 @@ export default function Properties() {
           </div>
         ) : (
           <Tabs defaultValue="list">
-            <TabsList className="mb-4">
+            <TabsList className="mb-4" data-tour="properties-views">
               <TabsTrigger value="list"><List className="mr-2 h-4 w-4" />List</TabsTrigger>
               <TabsTrigger value="map"><Map className="mr-2 h-4 w-4" />Map</TabsTrigger>
               {savedIds.size > 0 && (
