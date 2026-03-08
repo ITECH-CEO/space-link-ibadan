@@ -172,8 +172,8 @@ export default function Index() {
             <span className="font-display font-bold">MyCrib.ng</span>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <a href="tel:+2348000000000" className="flex items-center gap-1 hover:text-foreground transition-colors">
-              <Phone className="h-3.5 w-3.5" /> +234 800 000 0000
+            <a href="tel:+2349137425552" className="flex items-center gap-1 hover:text-foreground transition-colors">
+              <Phone className="h-3.5 w-3.5" /> +234 913 742 5552
             </a>
           </div>
           <p className="text-sm text-muted-foreground">

@@ -82,7 +82,7 @@ export function Navbar() {
 
         {/* Support contact — Hotels.ng style */}
         <a
-          href="https://wa.me/2348000000000"
+          href="https://wa.me/2349137425552"
           target="_blank"
           rel="noopener noreferrer"
           className="hidden md:flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -92,7 +92,7 @@ export function Navbar() {
           </div>
           <div className="leading-tight">
             <div className="text-[10px] text-muted-foreground">Call/WhatsApp us</div>
-            <div className="font-semibold text-foreground text-xs">+234 800 000 0000</div>
+            <div className="font-semibold text-foreground text-xs">+234 913 742 5552</div>
           </div>
         </a>
 
@@ -108,13 +108,13 @@ export function Navbar() {
               <SheetContent side="right" className="w-64 pt-12">
                 {/* Mobile support contact */}
                 <a
-                  href="https://wa.me/2348000000000"
+                  href="https://wa.me/2349137425552"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 mb-4 p-2 rounded-lg bg-success/10 text-sm"
                 >
                   <Phone className="h-4 w-4 text-success" />
-                  <span className="font-semibold text-foreground">+234 800 000 0000</span>
+                  <span className="font-semibold text-foreground">+234 913 742 5552</span>
                 </a>
                 <nav className="flex flex-col gap-1">
                   <NavItems />
