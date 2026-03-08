@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { toast } from "sonner";
-import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, MessageSquare, LayoutGrid, Heart, CheckCheck } from "lucide-react";
+import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, MessageSquare, LayoutGrid, Heart, CheckCheck, X } from "lucide-react";
 import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
 import { motion } from "framer-motion";
 
