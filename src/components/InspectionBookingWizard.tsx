@@ -102,7 +102,7 @@ export function InspectionBookingWizard({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="inspection-progress">
       {/* Progress Bar */}
       <div className="flex items-center justify-between px-2">
         {STEPS.map((s, i) => {
