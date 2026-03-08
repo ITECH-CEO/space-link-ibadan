@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_admin_notes: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_admin_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           admin_notes: string | null
@@ -1302,6 +1334,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      sensitive_data_access_log: {
+        Row: {
+          access_type: string
+          accessed_at: string | null
+          accessor_user_id: string
+          client_id: string | null
+          id: string
+        }
+        Insert: {
+          access_type: string
+          accessed_at?: string | null
+          accessor_user_id: string
+          client_id?: string | null
+          id?: string
+        }
+        Update: {
+          access_type?: string
+          accessed_at?: string | null
+          accessor_user_id?: string
+          client_id?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sensitive_data_access_log_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sponsors: {
         Row: {
