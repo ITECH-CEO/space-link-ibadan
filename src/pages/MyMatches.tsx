@@ -437,6 +437,21 @@ export default function MyMatches() {
           </Tabs>
         )}
 
+        {/* Complaint Button */}
+        {matches.filter(m => m.status === "accepted").length > 0 && (
+          <div className="mt-6 flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card">
+            <div>
+              <h3 className="font-semibold text-sm">Having an issue with your accommodation?</h3>
+              <p className="text-xs text-muted-foreground">Report maintenance problems to your landlord</p>
+            </div>
+            <ClientComplaintForm
+              matchedProperties={matches.filter(m => m.status === "accepted").map(m => ({ property_id: m.property_id, property_name: m.property_name }))}
+              clientName={clientName}
+              clientPhone={clientPhone}
+            />
+          </div>
+        )}
+
         {/* Rent Payments Section */}
         <div className="mt-8">
           <ClientRentPayments />
