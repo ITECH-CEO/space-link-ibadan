@@ -57,6 +57,9 @@ export default function Dashboard() {
             {(isSuperAdmin || isManager) && (
               <TabsTrigger value="commissions"><DollarSign className="mr-2 h-4 w-4" />Commissions</TabsTrigger>
             )}
+            {(isSuperAdmin || isManager) && (
+              <TabsTrigger value="inspections"><CalendarDays className="mr-2 h-4 w-4" />Inspections</TabsTrigger>
+            )}
             {isSuperAdmin && (
               <TabsTrigger value="admins"><ShieldCheck className="mr-2 h-4 w-4" />Admins</TabsTrigger>
             )}
