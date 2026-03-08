@@ -36,6 +36,7 @@ const navItems = [
   { key: "commissions", label: "Commissions", icon: Banknote, roles: ["super_admin", "manager"] },
   { key: "inspections", label: "Inspections", icon: CalendarDays, roles: ["super_admin", "manager"] },
   { key: "rent", label: "Rent Tracking", icon: Banknote, roles: ["super_admin", "manager"] },
+  { key: "complaints", label: "Complaints", icon: Wrench, roles: ["super_admin", "manager"] },
   { key: "admins", label: "Admins", icon: ShieldCheck, roles: ["super_admin"] },
   { key: "analytics", label: "Analytics", icon: BarChart3, roles: ["super_admin", "manager"] },
   { key: "fees", label: "Fees", icon: Settings, roles: ["super_admin"] },
