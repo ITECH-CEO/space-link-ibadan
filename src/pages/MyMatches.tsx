@@ -15,6 +15,7 @@ import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
 import { motion } from "framer-motion";
 import { MatchesTour } from "@/components/tours/MatchesTour";
 import { ClientRentPayments } from "@/components/ClientRentPayments";
+import { ClientComplaintForm } from "@/components/ClientComplaintForm";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
@@ -48,15 +49,19 @@ export default function MyMatches() {
   const [requesting, setRequesting] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
   const [seekingRoommate, setSeekingRoommate] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [clientPhone, setClientPhone] = useState<string | null>(null);
   const [swipeView, setSwipeView] = useState(false);
 
   const fetchAll = async () => {
     if (!user) return;
     const { data: client } = await (supabase as any)
-      .from("clients").select("id, seeking_roommate").eq("user_id", user.id).maybeSingle();
+      .from("clients").select("id, seeking_roommate, full_name, phone").eq("user_id", user.id).maybeSingle();
     if (!client) { setLoading(false); return; }
     setClientId(client.id);
     setSeekingRoommate(client.seeking_roommate || false);
+    setClientName(client.full_name || "");
+    setClientPhone(client.phone || null);
 
     const { data: propData } = await supabase
       .from("matches")
@@ -430,6 +435,21 @@ export default function MyMatches() {
               ) : null}
             </TabsContent>
           </Tabs>
+        )}
+
+        {/* Complaint Button */}
+        {matches.filter(m => m.status === "accepted").length > 0 && (
+          <div className="mt-6 flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card">
+            <div>
+              <h3 className="font-semibold text-sm">Having an issue with your accommodation?</h3>
+              <p className="text-xs text-muted-foreground">Report maintenance problems to your landlord</p>
+            </div>
+            <ClientComplaintForm
+              matchedProperties={matches.filter(m => m.status === "accepted").map(m => ({ property_id: m.property_id, property_name: m.property_name }))}
+              clientName={clientName}
+              clientPhone={clientPhone}
+            />
+          </div>
         )}
 
         {/* Rent Payments Section */}
