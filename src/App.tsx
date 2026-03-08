@@ -19,6 +19,7 @@ import LandlordOnboarding from "./pages/LandlordOnboarding";
 import Onboarding from "./pages/Onboarding";
 import Support from "./pages/Support";
 import LeaseView from "./pages/LeaseView";
+import MyAccommodation from "./pages/MyAccommodation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/support" element={<Support />} />
             <Route path="/lease" element={<LeaseView />} />
+            <Route path="/my-accommodation" element={<MyAccommodation />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

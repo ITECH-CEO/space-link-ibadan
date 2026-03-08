@@ -23,6 +23,7 @@ import { ClientComplaintForm } from "@/components/ClientComplaintForm";
 import { ClientComplaintTracker } from "@/components/ClientComplaintTracker";
 import { ClientPlatformComplaint } from "@/components/ClientPlatformComplaint";
 import { TenantAccommodationCard } from "@/components/TenantAccommodationCard";
+import { WelcomeBanner } from "@/components/WelcomeBanner";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
@@ -199,6 +200,8 @@ export default function MyMatches() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container max-w-4xl py-8">
+        <WelcomeBanner isTenant={isTenant} clientName={clientName} />
+
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <h1 className="font-display text-3xl font-bold">My Dashboard</h1>
           <p className="text-muted-foreground">
@@ -217,9 +220,7 @@ export default function MyMatches() {
                 animate={{ opacity: 1, y: 0 }}
                 className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6"
               >
-                <QuickAction icon={Home} label="My Room" color="bg-primary/10 text-primary" onClick={() => {
-                  document.getElementById("tab-accommodation")?.click();
-                }} />
+                <QuickAction icon={Home} label="My Room" color="bg-primary/10 text-primary" onClick={() => navigate("/my-accommodation")} />
                 <QuickAction icon={Banknote} label="Payments" color="bg-success/10 text-success" onClick={() => {
                   document.getElementById("tab-payments")?.click();
                 }} />
