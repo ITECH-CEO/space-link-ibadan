@@ -13,7 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { MapPin, Users, Phone, Mail, ArrowLeft, DollarSign, Building2, CalendarDays, Clock, CheckCircle, XCircle, Star, MessageSquare } from "lucide-react";
+import { MapPin, Users, Phone, Mail, ArrowLeft, DollarSign, Building2, CalendarDays, Clock, CheckCircle, XCircle, Star, MessageSquare, Footprints, Bus, Zap, Droplets, Navigation, Bike, Car } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
@@ -290,6 +290,106 @@ export default function PropertyDetail() {
           </div>
         )}
 
+        {/* Location & Transport Info */}
+        {(property.distance_to_campus_km || (property as any).walkability_rating || ((property as any).transport_options && (property as any).transport_options.length > 0)) && (
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {property.distance_to_campus_km && (
+              <Card className="border-primary/20">
+                <CardContent className="pt-5 pb-4 flex items-center gap-3">
+                  <div className="rounded-full bg-primary/10 p-2.5">
+                    <Navigation className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Distance to Campus</p>
+                    <p className="text-lg font-bold">{property.distance_to_campus_km} km</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {(property as any).walkability_rating && (
+              <Card className="border-primary/20">
+                <CardContent className="pt-5 pb-4 flex items-center gap-3">
+                  <div className="rounded-full bg-primary/10 p-2.5">
+                    <Footprints className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Walkability</p>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} className={cn("h-4 w-4", s <= (property as any).walkability_rating ? "fill-warning text-warning" : "text-muted-foreground/20")} />
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {(property as any).utility_rating?.power && (
+              <Card className="border-primary/20">
+                <CardContent className="pt-5 pb-4 flex items-center gap-3">
+                  <div className="rounded-full bg-warning/10 p-2.5">
+                    <Zap className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Power Reliability</p>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} className={cn("h-3.5 w-3.5", s <= (property as any).utility_rating.power ? "fill-warning text-warning" : "text-muted-foreground/20")} />
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {(property as any).utility_rating?.water && (
+              <Card className="border-primary/20">
+                <CardContent className="pt-5 pb-4 flex items-center gap-3">
+                  <div className="rounded-full bg-blue-500/10 p-2.5">
+                    <Droplets className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Water Reliability</p>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} className={cn("h-3.5 w-3.5", s <= (property as any).utility_rating.water ? "fill-blue-500 text-blue-500" : "text-muted-foreground/20")} />
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* Transport Options */}
+        {(property as any).transport_options && (property as any).transport_options.length > 0 && (
+          <div className="mb-6">
+            <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
+              <Bus className="h-5 w-5 text-primary" /> Getting to Campus
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {(property as any).transport_options.map((t: any, i: number) => {
+                const Icon = t.mode === 'walk' ? Footprints : t.mode === 'bike' ? Bike : t.mode === 'bus' ? Bus : Car;
+                return (
+                  <Card key={i}>
+                    <CardContent className="pt-4 pb-3 flex items-center gap-3">
+                      <div className="rounded-full bg-muted p-2">
+                        <Icon className="h-4 w-4 text-foreground" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium capitalize">{t.mode}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {t.duration && <span>~{t.duration}</span>}
+                          {t.cost_estimate && <span>· ₦{t.cost_estimate}</span>}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-6 md:grid-cols-2">
           {/* Details */}
           <Card>
@@ -310,7 +410,7 @@ export default function PropertyDetail() {
               )}
               {property.facilities && property.facilities.length > 0 && (
                 <div>
-                  <span className="text-muted-foreground text-sm">Facilities</span>
+                  <span className="text-muted-foreground text-sm">Amenities</span>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {property.facilities.map((f) => (
                       <Badge key={f} variant="secondary" className="text-xs">{f}</Badge>

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, MapPin, Users, Search, DollarSign, SlidersHorizontal, X, Heart, Map, List } from "lucide-react";
+import { Building2, MapPin, Users, Search, DollarSign, SlidersHorizontal, X, Heart, Map, List, Footprints, Navigation, Star } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { PropertyMap } from "@/components/PropertyMap";
@@ -143,14 +143,25 @@ export default function Properties() {
             <div className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
               <MapPin className="h-3 w-3" />{p.address}
             </div>
-            {p.proximity_to_campus && (
-              <p className="mb-3 text-xs text-muted-foreground">📍 {p.proximity_to_campus}</p>
-            )}
-            <div className="mb-3 flex items-center gap-4 text-sm">
+            <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
               <span className="flex items-center gap-1">
                 <Users className="h-4 w-4 text-primary" />
                 {p.available_rooms}/{p.total_rooms} rooms
               </span>
+              {p.distance_to_campus_km && (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Navigation className="h-3.5 w-3.5" />
+                  {p.distance_to_campus_km}km
+                </span>
+              )}
+              {(p as any).walkability_rating && (
+                <span className="flex items-center gap-0.5">
+                  <Footprints className="h-3.5 w-3.5 text-muted-foreground" />
+                  {[1,2,3,4,5].map(s => (
+                    <Star key={s} className={`h-3 w-3 ${s <= (p as any).walkability_rating ? "fill-warning text-warning" : "text-muted-foreground/20"}`} />
+                  ))}
+                </span>
+              )}
             </div>
             {p.facilities && p.facilities.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-2">
