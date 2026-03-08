@@ -30,6 +30,7 @@ interface LeaseAgreement {
   additional_notes: string | null;
   status: string;
   acknowledged_at: string | null;
+  access_token: string | null;
   created_at: string;
 }
 
