@@ -16,8 +16,10 @@ import { toast } from "sonner";
 import { MapPin, Users, Phone, Mail, ArrowLeft, DollarSign, Building2, CalendarDays, Clock, CheckCircle, XCircle, Star, MessageSquare, Footprints, Bus, Zap, Droplets, Navigation, Bike, Car } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import type { Tables } from "@/integrations/supabase/types";
 import { InspectionBookingWizard } from "@/components/InspectionBookingWizard";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
@@ -259,12 +261,17 @@ export default function PropertyDetail() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container max-w-4xl py-8">
-        <Link to="/properties" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
+        <Link to="/properties" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back to Properties
         </Link>
 
         {/* Header */}
-        <div className="gradient-primary rounded-xl p-6 mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="gradient-primary rounded-xl p-6 mb-6"
+        >
           <div className="flex items-start justify-between">
             <div>
               <h1 className="font-display text-2xl font-bold text-primary-foreground md:text-3xl">
@@ -284,18 +291,19 @@ export default function PropertyDetail() {
               <VerificationBadge status={property.verification_status} />
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Photos */}
+        {/* Photos with Lightbox */}
         {property.photos && property.photos.length > 0 && (
-          <div className="mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="mb-6"
+          >
             <h2 className="font-display text-lg font-semibold mb-3">Photos</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {property.photos.map((url, i) => (
-                <img key={i} src={url} alt={`${property.property_name} photo ${i + 1}`} className="rounded-lg object-cover aspect-video w-full" />
-              ))}
-            </div>
-          </div>
+            <ImageLightbox images={property.photos} alt={property.property_name} />
+          </motion.div>
         )}
 
         {/* Videos */}
