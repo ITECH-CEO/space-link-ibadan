@@ -12,6 +12,7 @@ import { HeroSearch } from "@/components/HeroSearch";
 import { CampusCards } from "@/components/CampusCards";
 import { SuccessStories } from "@/components/SuccessStories";
 import { FeaturedProperties } from "@/components/FeaturedProperties";
+import { HomeTour } from "@/components/tours/HomeTour";
 import mycribLogo from "@/assets/mycrib-logo.png";
 
 const features = [
@@ -133,6 +134,7 @@ export default function Index() {
 
       <Footer />
       <WhatsAppButton />
+      <HomeTour />
     </div>
   );
 }

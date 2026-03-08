@@ -38,7 +38,7 @@ export function FeaturedProperties() {
   if (loading || properties.length === 0) return null;
 
   return (
-    <section className="py-16 bg-background">
+    <section className="py-16 bg-background" data-tour="featured-properties">
       <div className="container">
         <div className="flex items-center justify-between mb-8">
           <div>
