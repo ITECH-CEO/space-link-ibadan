@@ -133,6 +133,7 @@ export default function Index() {
         </div>
       </section>
 
+      <SponsorsDisplay />
       <Footer />
       <WhatsAppButton />
       <HomeTour />

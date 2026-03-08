@@ -589,6 +589,9 @@ export default function PropertyDetail() {
 
         {/* Reviews Section */}
         <PropertyReviews propertyId={id!} />
+
+        {/* Sponsors for this property */}
+        <SponsorsDisplay propertyId={id} />
       </main>
     </div>
   );
