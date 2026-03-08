@@ -25,6 +25,7 @@ export type Database = {
           email: string | null
           faculty: string | null
           full_name: string
+          gender: string | null
           government_id_url: string | null
           guarantor_name: string | null
           guarantor_phone: string | null
@@ -50,6 +51,7 @@ export type Database = {
           email?: string | null
           faculty?: string | null
           full_name: string
+          gender?: string | null
           government_id_url?: string | null
           guarantor_name?: string | null
           guarantor_phone?: string | null
@@ -75,6 +77,7 @@ export type Database = {
           email?: string | null
           faculty?: string | null
           full_name?: string
+          gender?: string | null
           government_id_url?: string | null
           guarantor_name?: string | null
           guarantor_phone?: string | null

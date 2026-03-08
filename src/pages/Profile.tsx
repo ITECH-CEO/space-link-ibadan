@@ -41,6 +41,7 @@ export default function Profile() {
     government_id_url: "", proof_of_admission_url: "", current_photo_url: "",
     course: "", faculty: "", level: "",
     seeking_roommate: false,
+    gender: "",
   });
 
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function Profile() {
             current_photo_url: data.current_photo_url || "",
             course: data.course || "", faculty: data.faculty || "", level: data.level || "",
             seeking_roommate: data.seeking_roommate || false,
+            gender: data.gender || "",
           });
         }
       });
@@ -76,6 +78,10 @@ export default function Profile() {
   if (!user) return <Navigate to="/auth" replace />;
 
   const handleSave = async () => {
+    if (!form.gender) {
+      toast.error("Gender is required");
+      return;
+    }
     setSaving(true);
     const payload: any = {
       full_name: form.full_name,
@@ -91,6 +97,7 @@ export default function Profile() {
       current_photo_url: form.current_photo_url || null,
       course: form.course || null, faculty: form.faculty || null, level: form.level || null,
       seeking_roommate: form.seeking_roommate,
+      gender: form.gender || null,
       user_id: user.id, email: user.email,
     };
 
@@ -115,6 +122,7 @@ export default function Profile() {
 
   const verificationSteps = [
     { label: "Full Name", done: !!form.full_name },
+    { label: "Gender", done: !!form.gender },
     { label: "Phone Number", done: !!form.phone },
     { label: "NIN / Gov ID Number", done: !!form.nin },
     { label: "Government ID Upload", done: !!form.government_id_url },
@@ -165,6 +173,18 @@ export default function Profile() {
               <div className="space-y-2">
                 <Label>Full Name</Label>
                 <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required maxLength={100} />
+              </div>
+              <div className="space-y-2">
+                <Label>Gender <span className="text-destructive">*</span></Label>
+                <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
+                  <SelectTrigger className={!form.gender ? "border-destructive/50" : ""}>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Phone</Label>
