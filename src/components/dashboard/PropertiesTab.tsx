@@ -105,7 +105,7 @@ export function PropertiesTab() {
       available_rooms: p.available_rooms ?? 0,
       proximity_to_campus: p.proximity_to_campus || "",
       special_notes: p.special_notes || "",
-      admin_notes: p.admin_notes || "",
+      admin_notes: propertyAdminNotes[p.id] || "",
       verification_status: p.verification_status,
       existingPhotos: p.photos || [],
     });
