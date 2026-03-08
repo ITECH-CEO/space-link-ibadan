@@ -21,11 +21,12 @@ import { FeesTab } from "@/components/dashboard/FeesTab";
 import { SettingsTab } from "@/components/dashboard/SettingsTab";
 import { RentTrackingTab } from "@/components/dashboard/RentTrackingTab";
 import { ComplaintsTab } from "@/components/dashboard/ComplaintsTab";
+import { PlatformComplaintsTab } from "@/components/dashboard/PlatformComplaintsTab";
 import { OccupancyTab } from "@/components/dashboard/OccupancyTab";
 import {
   LayoutDashboard, Users, Building2, Handshake, Banknote, Wrench,
   ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings,
-  LogOut, Moon, Sun, Home, ChevronRight,
+  LogOut, Moon, Sun, Home, ChevronRight, MessageSquareWarning,
 } from "lucide-react";
 
 const navItems = [
@@ -37,7 +38,8 @@ const navItems = [
   { key: "commissions", label: "Commissions", icon: Banknote, roles: ["super_admin", "manager"] },
   { key: "inspections", label: "Inspections", icon: CalendarDays, roles: ["super_admin", "manager"] },
   { key: "rent", label: "Rent Tracking", icon: Banknote, roles: ["super_admin", "manager"] },
-  { key: "complaints", label: "Complaints", icon: Wrench, roles: ["super_admin", "manager"] },
+  { key: "complaints", label: "Maintenance", icon: Wrench, roles: ["super_admin", "manager"] },
+  { key: "platform_complaints", label: "Platform Complaints", icon: MessageSquareWarning, roles: ["super_admin", "manager"] },
   { key: "occupancy", label: "Occupancy", icon: Building2, roles: ["super_admin", "manager"] },
   { key: "admins", label: "Admins", icon: ShieldCheck, roles: ["super_admin"] },
   { key: "analytics", label: "Analytics", icon: BarChart3, roles: ["super_admin", "manager"] },
@@ -48,7 +50,9 @@ const navItems = [
 const tabComponents: Record<string, React.ComponentType> = {
   overview: OverviewTab, clients: ClientsTab, properties: PropertiesTab,
   matches: MatchesTab, roommates: RoommateMatchesTab, commissions: CommissionsTab,
-  inspections: InspectionsTab, rent: RentTrackingTab, complaints: ComplaintsTab, occupancy: OccupancyTab, admins: AdminsTab, analytics: AnalyticsTab, fees: FeesTab, settings: SettingsTab,
+  inspections: InspectionsTab, rent: RentTrackingTab, complaints: ComplaintsTab,
+  platform_complaints: PlatformComplaintsTab, occupancy: OccupancyTab,
+  admins: AdminsTab, analytics: AnalyticsTab, fees: FeesTab, settings: SettingsTab,
 };
 
 function DashboardSidebar({ activeTab, setActiveTab, userRole }: {
