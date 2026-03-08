@@ -675,7 +675,6 @@ export default function PropertyDetail() {
     </div>
   );
 }
-  selectedDate, onSelectDate, isDayAvailable, slotsForDate, booking, onBookSlot,
 }: {
   selectedDate: Date | undefined;
   onSelectDate: (d: Date | undefined) => void;
