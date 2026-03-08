@@ -41,6 +41,7 @@ export default function Profile() {
     government_id_url: "", proof_of_admission_url: "", current_photo_url: "",
     course: "", faculty: "", level: "",
     seeking_roommate: false,
+    gender: "",
   });
 
   useEffect(() => {
