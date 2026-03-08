@@ -306,7 +306,7 @@ export default function Properties() {
 
             <TabsContent value="list">
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filtered.map((p) => <PropertyCard key={p.id} p={p} />)}
+                {filtered.map((p, i) => <PropertyCard key={p.id} p={p} index={i} />)}
               </div>
             </TabsContent>
 
