@@ -37,6 +37,7 @@ export default function MyMatches() {
   const [clientId, setClientId] = useState<string | null>(null);
   const [seekingRoommate, setSeekingRoommate] = useState(false);
   const [payingMatchId, setPayingMatchId] = useState<string | null>(null);
+  const [swipeView, setSwipeView] = useState(false);
 
   // Verify Paystack payment on redirect
   useEffect(() => {
