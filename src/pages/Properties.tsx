@@ -23,9 +23,10 @@ interface PropertyWithRooms extends Tables<"properties"> {
 
 export default function Properties() {
   const { user } = useAuth();
+  const [urlParams] = useSearchParams();
   const [properties, setProperties] = useState<PropertyWithRooms[]>([]);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [search, setSearch] = useState(urlParams.get("search") || "");
+  const [typeFilter, setTypeFilter] = useState(urlParams.get("type") || "all");
   const [maxPrice, setMaxPrice] = useState<number>(500000);
   const [facilityFilter, setFacilityFilter] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
