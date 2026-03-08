@@ -128,10 +128,15 @@ export function ClientsTab() {
     setSaving(false);
   };
 
+  const maskNin = (nin: string | null) => {
+    if (!nin || nin.length < 4) return nin || "—";
+    return "****" + nin.slice(-4);
+  };
+
   const verificationChecks = (c: Tables<"clients">) => [
     { label: "Full Name", done: !!c.full_name, value: c.full_name },
     { label: "Phone", done: !!c.phone, value: c.phone },
-    { label: "NIN", done: !!c.nin, value: c.nin },
+    { label: "NIN", done: !!c.nin, value: maskNin(c.nin) },
     { label: "Government ID", done: !!c.government_id_url, value: c.government_id_url ? "Uploaded" : "Missing" },
     { label: "Proof of Admission", done: !!c.proof_of_admission_url, value: c.proof_of_admission_url ? "Uploaded" : "Missing" },
     { label: "Current Photo", done: !!c.current_photo_url, value: c.current_photo_url ? "Uploaded" : "Missing" },
