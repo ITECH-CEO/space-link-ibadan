@@ -11,7 +11,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Plus, CheckCircle, XCircle } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
-import type { Tables } from "@/integrations/supabase/types";
 
 export function PropertiesTab() {
   const [properties, setProperties] = useState<Tables<"properties">[]>([]);
