@@ -738,6 +738,7 @@ export type Database = {
           location: string | null
           longitude: number | null
           owner_user_id: string | null
+          panorama_photos: string[] | null
           photo_check: boolean | null
           photos: string[] | null
           physical_check: boolean | null
@@ -769,6 +770,7 @@ export type Database = {
           location?: string | null
           longitude?: number | null
           owner_user_id?: string | null
+          panorama_photos?: string[] | null
           photo_check?: boolean | null
           photos?: string[] | null
           physical_check?: boolean | null
@@ -800,6 +802,7 @@ export type Database = {
           location?: string | null
           longitude?: number | null
           owner_user_id?: string | null
+          panorama_photos?: string[] | null
           photo_check?: boolean | null
           photos?: string[] | null
           physical_check?: boolean | null

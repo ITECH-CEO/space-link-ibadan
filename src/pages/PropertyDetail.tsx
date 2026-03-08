@@ -20,6 +20,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { InspectionBookingWizard } from "@/components/InspectionBookingWizard";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { PropertyReviews } from "@/components/PropertyReviews";
+import { PanoramaViewer } from "@/components/PanoramaViewer";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
@@ -244,6 +245,21 @@ export default function PropertyDetail() {
               ))}
             </div>
           </div>
+        )}
+
+        {/* 360° Virtual Tour */}
+        {(property as any).panorama_photos && (property as any).panorama_photos.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="mb-6"
+          >
+            <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
+              🔄 360° Virtual Tour
+            </h2>
+            <PanoramaViewer images={(property as any).panorama_photos} />
+          </motion.div>
         )}
 
         {/* Location & Transport Info */}

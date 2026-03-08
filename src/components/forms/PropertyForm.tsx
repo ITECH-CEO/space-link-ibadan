@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Upload, X, Image, Video } from "lucide-react";
+import { Plus, Trash2, Upload, X, Image, Video, RotateCcw } from "lucide-react";
 
 const facilityOptions = ["Water", "Electricity", "Security", "Wi-Fi", "Generator", "Parking", "Kitchen", "Laundry"];
 
@@ -52,6 +52,7 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
   const [roomTypes, setRoomTypes] = useState<RoomTypeInput[]>([emptyRoomType()]);
   const [photos, setPhotos] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
+  const [panoramas, setPanoramas] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
 
@@ -103,6 +104,13 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
     setVideos((prev) => [...prev, ...valid].slice(0, 3));
   };
 
+  const handlePanoramaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const valid = files.filter((f) => f.type.startsWith("image/") && f.size <= 10 * 1024 * 1024);
+    if (valid.length !== files.length) toast.error("Some files skipped (must be images under 10MB)");
+    setPanoramas((prev) => [...prev, ...valid].slice(0, 5));
+  };
+
   const uploadFiles = async (files: File[], folder: string): Promise<string[]> => {
     const urls: string[] = [];
     for (const file of files) {
@@ -128,12 +136,16 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
       // Upload media
       let photoUrls: string[] = [];
       let videoUrls: string[] = [];
+      let panoramaUrls: string[] = [];
 
       if (photos.length > 0) {
         photoUrls = await uploadFiles(photos, "photos");
       }
       if (videos.length > 0) {
         videoUrls = await uploadFiles(videos, "videos");
+      }
+      if (panoramas.length > 0) {
+        panoramaUrls = await uploadFiles(panoramas, "panoramas");
       }
 
       setUploadProgress("");
@@ -156,6 +168,7 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
           special_notes: form.special_notes || null,
           photos: photoUrls,
           videos: videoUrls,
+          panorama_photos: panoramaUrls,
           distance_to_campus_km: form.distance_to_campus_km ? Number(form.distance_to_campus_km) : null,
           walkability_rating: form.walkability_rating ? Number(form.walkability_rating) : null,
           utility_rating: (form.power_rating || form.water_rating) ? {
@@ -395,6 +408,28 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
                   <div key={i} className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs">
                     <span className="truncate max-w-[100px]">{f.name}</span>
                     <button type="button" onClick={() => setVideos((prev) => prev.filter((_, j) => j !== i))}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 360° Panoramas */}
+          <div className="space-y-2 sm:col-span-2">
+            <Label className="flex items-center gap-2"><RotateCcw className="h-4 w-4" />360° Panorama Photos (max 5)</Label>
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-input p-4 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+              <Upload className="h-4 w-4" />
+              Upload panoramic/360° photos (up to 10MB each)
+              <input type="file" accept="image/*" multiple onChange={handlePanoramaSelect} className="hidden" />
+            </label>
+            {panoramas.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {panoramas.map((f, i) => (
+                  <div key={i} className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs">
+                    <span className="truncate max-w-[100px]">{f.name}</span>
+                    <button type="button" onClick={() => setPanoramas((prev) => prev.filter((_, j) => j !== i))}>
                       <X className="h-3 w-3" />
                     </button>
                   </div>
