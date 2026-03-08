@@ -82,7 +82,7 @@ export function Navbar() {
 
         {/* Support contact — Hotels.ng style */}
         <a
-          href="https://wa.me/2348000000000"
+          href="https://wa.me/2349137425552"
           target="_blank"
           rel="noopener noreferrer"
           className="hidden md:flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
