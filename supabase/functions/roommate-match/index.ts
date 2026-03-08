@@ -211,6 +211,10 @@ serve(async (req) => {
     for (const clientA of clients) {
       for (const clientB of allClients) {
         if (clientA.id >= clientB.id) continue;
+
+        // HARD RULE: Same gender only
+        if (!clientA.gender || !clientB.gender || clientA.gender.toLowerCase() !== clientB.gender.toLowerCase()) continue;
+
         const key = [clientA.id, clientB.id].sort().join("-");
         if (existingSet.has(key)) continue;
 
