@@ -15,6 +15,7 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { toast } from "sonner";
 import { Shield, FileText, GraduationCap, Users } from "lucide-react";
 import { ReferralCard } from "@/components/ReferralCard";
+import { motion } from "framer-motion";
 
 const preferenceOptions = [
   "Quiet", "Non-Smoker", "Final Year", "Early Riser", "Night Owl",
@@ -28,6 +29,16 @@ const faculties = [
 ];
 
 const levels = ["100", "200", "300", "400", "500", "600", "Postgraduate"];
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
+
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08 } },
+};
 
 export default function Profile() {
   const { user, loading: authLoading } = useAuth();
@@ -140,148 +151,163 @@ export default function Profile() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container max-w-2xl py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="font-display text-3xl font-bold">My Profile</h1>
-          {client && <VerificationBadge status={client.verification_status} />}
-        </div>
+        <motion.div variants={stagger} initial="hidden" animate="show">
+          <motion.div variants={fadeUp} className="mb-6 flex items-center justify-between">
+            <h1 className="font-display text-3xl font-bold">My Profile</h1>
+            {client && <VerificationBadge status={client.verification_status} />}
+          </motion.div>
 
-        {/* Verification Progress */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3 mb-3">
-              <Shield className="h-5 w-5 text-primary" />
-              <h3 className="font-display font-semibold">Verification Progress</h3>
-              <span className="ml-auto text-sm font-medium text-primary">{progressPercent}%</span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-              <div className="h-full rounded-full gradient-primary transition-all duration-500" style={{ width: `${progressPercent}%` }} />
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-1">
-              {verificationSteps.map((s) => (
-                <div key={s.label} className={`text-xs flex items-center gap-1 ${s.done ? "text-success" : "text-muted-foreground"}`}>
-                  <span>{s.done ? "✓" : "○"}</span> {s.label}
+          {/* Verification Progress */}
+          <motion.div variants={fadeUp}>
+            <Card className="mb-6 card-elevated border-border/50">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <Shield className="h-5 w-5 text-primary" />
+                  <h3 className="font-display font-semibold">Verification Progress</h3>
+                  <span className="ml-auto text-sm font-medium text-primary">{progressPercent}%</span>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="mb-6">
-          <CardHeader><CardTitle>Personal Information</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Full Name</Label>
-                <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required maxLength={100} />
-              </div>
-              <div className="space-y-2">
-                <Label>Gender <span className="text-destructive">*</span></Label>
-                <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
-                  <SelectTrigger className={!form.gender ? "border-destructive/50" : ""}>
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Phone</Label>
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} maxLength={20} />
-              </div>
-              <div className="space-y-2">
-                <Label>NIN / Government ID Number</Label>
-                <Input value={form.nin} onChange={(e) => setForm({ ...form, nin: e.target.value })} maxLength={20} />
-              </div>
-            </div>
-
-            {/* Academic Info */}
-            <h3 className="pt-4 font-display font-semibold flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-primary" /> Academic Information
-            </h3>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label>Faculty</Label>
-                <Select value={form.faculty} onValueChange={(v) => setForm({ ...form, faculty: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select faculty" /></SelectTrigger>
-                  <SelectContent>
-                    {faculties.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Course</Label>
-                <Input value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })} placeholder="e.g. Computer Science" maxLength={100} />
-              </div>
-              <div className="space-y-2">
-                <Label>Level</Label>
-                <Select value={form.level} onValueChange={(v) => setForm({ ...form, level: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-                  <SelectContent>
-                    {levels.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Verification Documents */}
-            <h3 className="pt-4 font-display font-semibold flex items-center gap-2">
-              <FileText className="h-4 w-4 text-primary" /> Verification Documents
-            </h3>
-            <p className="text-xs text-muted-foreground">Upload clear photos of your documents. Max 5MB each.</p>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <FileUpload bucket="property-media" folder="client-docs" label="Government ID" currentUrl={form.government_id_url || null} onUploaded={(url) => setForm({ ...form, government_id_url: url })} />
-              <FileUpload bucket="property-media" folder="client-docs" label="Proof of Admission" currentUrl={form.proof_of_admission_url || null} onUploaded={(url) => setForm({ ...form, proof_of_admission_url: url })} />
-              <FileUpload bucket="property-media" folder="client-photos" label="Current Photo" currentUrl={form.current_photo_url || null} onUploaded={(url) => setForm({ ...form, current_photo_url: url })} />
-            </div>
-
-            <h3 className="pt-4 font-display font-semibold">Guarantor Details</h3>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2"><Label>Name</Label><Input value={form.guarantor_name} onChange={(e) => setForm({ ...form, guarantor_name: e.target.value })} maxLength={100} /></div>
-              <div className="space-y-2"><Label>Phone</Label><Input value={form.guarantor_phone} onChange={(e) => setForm({ ...form, guarantor_phone: e.target.value })} maxLength={20} /></div>
-              <div className="space-y-2"><Label>Relationship</Label><Input value={form.guarantor_relationship} onChange={(e) => setForm({ ...form, guarantor_relationship: e.target.value })} maxLength={50} /></div>
-            </div>
-
-            <h3 className="pt-4 font-display font-semibold">Budget (₦)</h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2"><Label>Min Budget</Label><Input type="number" value={form.budget_min} onChange={(e) => setForm({ ...form, budget_min: e.target.value })} /></div>
-              <div className="space-y-2"><Label>Max Budget</Label><Input type="number" value={form.budget_max} onChange={(e) => setForm({ ...form, budget_max: e.target.value })} /></div>
-            </div>
-
-            <h3 className="pt-4 font-display font-semibold">Preferences / Tags</h3>
-            <div className="flex flex-wrap gap-2">
-              {preferenceOptions.map((p) => (
-                <button key={p} onClick={() => togglePreference(p)} className={`rounded-full px-3 py-1 text-sm transition-colors ${form.preferences.includes(p) ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
-                  {p}
-                </button>
-              ))}
-            </div>
-
-            {/* Roommate Matching Toggle */}
-            <Card className="mt-4 border-primary/20">
-              <CardContent className="pt-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-primary" />
-                    <div>
-                      <h4 className="font-semibold text-sm">Looking for a Roommate?</h4>
-                      <p className="text-xs text-muted-foreground">Enable this to be matched with compatible roommates based on your course, faculty, and preferences.</p>
+                <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full gradient-primary"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPercent}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                  />
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-1">
+                  {verificationSteps.map((s) => (
+                    <div key={s.label} className={`text-xs flex items-center gap-1 ${s.done ? "text-success" : "text-muted-foreground"}`}>
+                      <span>{s.done ? "✓" : "○"}</span> {s.label}
                     </div>
-                  </div>
-                  <Switch checked={form.seeking_roommate} onCheckedChange={(v) => setForm({ ...form, seeking_roommate: v })} />
+                  ))}
                 </div>
               </CardContent>
             </Card>
+          </motion.div>
 
-            <Button onClick={handleSave} disabled={saving} className="mt-6 gradient-primary text-primary-foreground">
-              {saving ? "Saving..." : "Save Profile"}
-            </Button>
-          </CardContent>
-        </Card>
+          <motion.div variants={fadeUp}>
+            <Card className="mb-6 card-elevated border-border/50">
+              <CardHeader><CardTitle>Personal Information</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Full Name</Label>
+                    <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required maxLength={100} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Gender <span className="text-destructive">*</span></Label>
+                    <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
+                      <SelectTrigger className={!form.gender ? "border-destructive/50" : ""}>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Phone</Label>
+                    <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} maxLength={20} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>NIN / Government ID Number</Label>
+                    <Input value={form.nin} onChange={(e) => setForm({ ...form, nin: e.target.value })} maxLength={20} />
+                  </div>
+                </div>
 
-        {/* Referral Program */}
-        <ReferralCard />
+                <h3 className="pt-4 font-display font-semibold flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4 text-primary" /> Academic Information
+                </h3>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>Faculty</Label>
+                    <Select value={form.faculty} onValueChange={(v) => setForm({ ...form, faculty: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select faculty" /></SelectTrigger>
+                      <SelectContent>
+                        {faculties.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Course</Label>
+                    <Input value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })} placeholder="e.g. Computer Science" maxLength={100} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Level</Label>
+                    <Select value={form.level} onValueChange={(v) => setForm({ ...form, level: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                      <SelectContent>
+                        {levels.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <h3 className="pt-4 font-display font-semibold flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" /> Verification Documents
+                </h3>
+                <p className="text-xs text-muted-foreground">Upload clear photos of your documents. Max 5MB each.</p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <FileUpload bucket="property-media" folder="client-docs" label="Government ID" currentUrl={form.government_id_url || null} onUploaded={(url) => setForm({ ...form, government_id_url: url })} />
+                  <FileUpload bucket="property-media" folder="client-docs" label="Proof of Admission" currentUrl={form.proof_of_admission_url || null} onUploaded={(url) => setForm({ ...form, proof_of_admission_url: url })} />
+                  <FileUpload bucket="property-media" folder="client-photos" label="Current Photo" currentUrl={form.current_photo_url || null} onUploaded={(url) => setForm({ ...form, current_photo_url: url })} />
+                </div>
+
+                <h3 className="pt-4 font-display font-semibold">Guarantor Details</h3>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2"><Label>Name</Label><Input value={form.guarantor_name} onChange={(e) => setForm({ ...form, guarantor_name: e.target.value })} maxLength={100} /></div>
+                  <div className="space-y-2"><Label>Phone</Label><Input value={form.guarantor_phone} onChange={(e) => setForm({ ...form, guarantor_phone: e.target.value })} maxLength={20} /></div>
+                  <div className="space-y-2"><Label>Relationship</Label><Input value={form.guarantor_relationship} onChange={(e) => setForm({ ...form, guarantor_relationship: e.target.value })} maxLength={50} /></div>
+                </div>
+
+                <h3 className="pt-4 font-display font-semibold">Budget (₦)</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2"><Label>Min Budget</Label><Input type="number" value={form.budget_min} onChange={(e) => setForm({ ...form, budget_min: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Max Budget</Label><Input type="number" value={form.budget_max} onChange={(e) => setForm({ ...form, budget_max: e.target.value })} /></div>
+                </div>
+
+                <h3 className="pt-4 font-display font-semibold">Preferences / Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {preferenceOptions.map((p) => (
+                    <motion.button
+                      key={p}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => togglePreference(p)}
+                      className={`rounded-full px-3 py-1 text-sm transition-colors ${form.preferences.includes(p) ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                    >
+                      {p}
+                    </motion.button>
+                  ))}
+                </div>
+
+                <Card className="mt-4 border-primary/20 card-elevated">
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Users className="h-5 w-5 text-primary" />
+                        <div>
+                          <h4 className="font-semibold text-sm">Looking for a Roommate?</h4>
+                          <p className="text-xs text-muted-foreground">Enable this to be matched with compatible roommates based on your course, faculty, and preferences.</p>
+                        </div>
+                      </div>
+                      <Switch checked={form.seeking_roommate} onCheckedChange={(v) => setForm({ ...form, seeking_roommate: v })} />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Button onClick={handleSave} disabled={saving} className="mt-6 gradient-primary text-primary-foreground">
+                  {saving ? "Saving..." : "Save Profile"}
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div variants={fadeUp}>
+            <ReferralCard />
+          </motion.div>
+        </motion.div>
       </main>
       <WhatsAppButton />
     </div>

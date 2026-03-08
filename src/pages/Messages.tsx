@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { MessageCircle, Send, ArrowLeft, User } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Conversation {
   id: string;
@@ -206,26 +207,43 @@ export default function Messages() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container py-8">
-        <h1 className="font-display text-3xl font-bold mb-6">Messages</h1>
-        <div className="grid gap-6 md:grid-cols-[300px_1fr] h-[calc(100vh-220px)]">
+        <motion.h1
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="font-display text-3xl font-bold mb-6"
+        >
+          Messages
+        </motion.h1>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid gap-6 md:grid-cols-[300px_1fr] h-[calc(100vh-220px)]"
+        >
           {/* Conversation list */}
-          <Card className={`overflow-hidden ${activeConvo ? "hidden md:block" : ""}`}>
-            <CardHeader className="py-3 px-4">
+          <Card className={`overflow-hidden card-elevated border-border/50 ${activeConvo ? "hidden md:block" : ""}`}>
+            <CardHeader className="py-3 px-4 border-b border-border/50">
               <CardTitle className="text-sm flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" /> Conversations
+                <MessageCircle className="h-4 w-4 text-primary" /> Conversations
               </CardTitle>
             </CardHeader>
             <ScrollArea className="h-[calc(100%-60px)]">
               {loading ? (
                 <p className="p-4 text-sm text-muted-foreground">Loading...</p>
               ) : conversations.length === 0 ? (
-                <p className="p-4 text-sm text-muted-foreground">No conversations yet.</p>
+                <div className="p-8 text-center">
+                  <MessageCircle className="mx-auto h-10 w-10 text-muted-foreground/20 mb-2" />
+                  <p className="text-sm text-muted-foreground">No conversations yet.</p>
+                </div>
               ) : (
-                conversations.map((c) => (
-                  <button
+                conversations.map((c, i) => (
+                  <motion.button
                     key={c.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
                     onClick={() => setActiveConvo(c.id)}
-                    className={`w-full text-left px-4 py-3 border-b transition-colors hover:bg-muted/50 ${
+                    className={`w-full text-left px-4 py-3 border-b border-border/30 transition-colors hover:bg-muted/50 ${
                       activeConvo === c.id ? "bg-primary/5 border-l-2 border-l-primary" : ""
                     }`}
                   >
@@ -242,17 +260,17 @@ export default function Messages() {
                         </Badge>
                       )}
                     </div>
-                  </button>
+                  </motion.button>
                 ))
               )}
             </ScrollArea>
           </Card>
 
           {/* Chat area */}
-          <Card className={`flex flex-col overflow-hidden ${!activeConvo ? "hidden md:flex" : ""}`}>
+          <Card className={`flex flex-col overflow-hidden card-elevated border-border/50 ${!activeConvo ? "hidden md:flex" : ""}`}>
             {activeConvo ? (
               <>
-                <CardHeader className="py-3 px-4 border-b flex-row items-center gap-3">
+                <CardHeader className="py-3 px-4 border-b border-border/50 flex-row items-center gap-3">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -268,35 +286,41 @@ export default function Messages() {
                 </CardHeader>
                 <ScrollArea className="flex-1 p-4">
                   <div className="space-y-3">
-                    {messages.map((m) => (
-                      <div
-                        key={m.id}
-                        className={`flex ${m.sender_id === user.id ? "justify-end" : "justify-start"}`}
-                      >
-                        <div
-                          className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${
-                            m.sender_id === user.id
-                              ? "gradient-primary text-primary-foreground rounded-br-md"
-                              : "bg-muted text-foreground rounded-bl-md"
-                          }`}
+                    <AnimatePresence>
+                      {messages.map((m) => (
+                        <motion.div
+                          key={m.id}
+                          initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ duration: 0.2 }}
+                          className={`flex ${m.sender_id === user.id ? "justify-end" : "justify-start"}`}
                         >
-                          <p>{m.content}</p>
-                          <p className={`text-[10px] mt-1 ${m.sender_id === user.id ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                            {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                          <div
+                            className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${
+                              m.sender_id === user.id
+                                ? "gradient-primary text-primary-foreground rounded-br-md"
+                                : "bg-muted text-foreground rounded-bl-md"
+                            }`}
+                          >
+                            <p>{m.content}</p>
+                            <p className={`text-[10px] mt-1 ${m.sender_id === user.id ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                              {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                     <div ref={scrollRef} />
                   </div>
                 </ScrollArea>
-                <div className="border-t p-3 flex gap-2">
+                <div className="border-t border-border/50 p-3 flex gap-2">
                   <Input
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type a message..."
                     maxLength={1000}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                    className="bg-muted/50"
                   />
                   <Button onClick={sendMessage} disabled={sending || !newMessage.trim()} size="icon" className="gradient-primary text-primary-foreground">
                     <Send className="h-4 w-4" />
@@ -306,13 +330,14 @@ export default function Messages() {
             ) : (
               <div className="flex-1 flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
-                  <MessageCircle className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
-                  <p>Select a conversation to start chatting</p>
+                  <MessageCircle className="mx-auto h-12 w-12 text-muted-foreground/20 mb-3" />
+                  <p className="font-medium">Select a conversation to start chatting</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Your messages are end-to-end private</p>
                 </div>
               </div>
             )}
           </Card>
-        </div>
+        </motion.div>
       </main>
     </div>
   );
