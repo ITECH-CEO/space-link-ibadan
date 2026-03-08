@@ -69,7 +69,7 @@ export function LandlordPaymentsTab() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-success/10 p-2.5">
-                <DollarSign className="h-5 w-5 text-success" />
+                <Banknote className="h-5 w-5 text-success" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Received</p>
