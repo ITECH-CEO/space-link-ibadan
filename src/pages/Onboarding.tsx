@@ -135,7 +135,7 @@ export default function Onboarding() {
           </div>
 
           {/* Simple Progress Bar */}
-          <div className="flex items-center gap-2 mb-6 px-2">
+          <div className="flex items-center gap-2 mb-6 px-2" data-tour="onboarding-progress">
             {STEPS.map((s, i) => (
               <div key={i} className="flex-1">
                 <div className={cn(
