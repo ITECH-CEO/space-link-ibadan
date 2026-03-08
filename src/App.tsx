@@ -18,6 +18,7 @@ import LandlordDashboard from "./pages/LandlordDashboard";
 import LandlordOnboarding from "./pages/LandlordOnboarding";
 import Onboarding from "./pages/Onboarding";
 import Support from "./pages/Support";
+import LeaseView from "./pages/LeaseView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/landlord/register" element={<LandlordOnboarding />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/support" element={<Support />} />
+            <Route path="/lease" element={<LeaseView />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

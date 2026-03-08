@@ -13,13 +13,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, MapPin, Users, Search, Banknote, SlidersHorizontal, X, Heart, Map, List, Footprints, Navigation, Star } from "lucide-react";
+import { Building2, MapPin, Users, Search, Banknote, SlidersHorizontal, X, Heart, Map, List, Footprints, Navigation, Star, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import type { Tables } from "@/integrations/supabase/types";
 import { PropertyMap } from "@/components/PropertyMap";
 import { PropertyCarousel } from "@/components/PropertyCarousel";
 import { PropertiesTour } from "@/components/tours/PropertiesTour";
+import { SavedSearchManager } from "@/components/SavedSearchManager";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
@@ -248,6 +250,16 @@ export default function Properties() {
               </Badge>
             )}
           </Button>
+          {user && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon"><Bell className="h-4 w-4" /></Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+                <SavedSearchManager />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* Expanded Filters */}

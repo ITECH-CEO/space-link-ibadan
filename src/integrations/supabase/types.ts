@@ -331,6 +331,7 @@ export type Database = {
       }
       lease_agreements: {
         Row: {
+          access_token: string | null
           acknowledged_at: string | null
           additional_notes: string | null
           created_at: string
@@ -351,6 +352,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          access_token?: string | null
           acknowledged_at?: string | null
           additional_notes?: string | null
           created_at?: string
@@ -371,6 +373,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          access_token?: string | null
           acknowledged_at?: string | null
           additional_notes?: string | null
           created_at?: string
@@ -1123,6 +1126,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_searches: {
+        Row: {
+          budget_max: number | null
+          budget_min: number | null
+          created_at: string
+          facilities: string[] | null
+          id: string
+          last_notified_at: string | null
+          location: string | null
+          notify_enabled: boolean
+          property_type: string | null
+          search_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_max?: number | null
+          budget_min?: number | null
+          created_at?: string
+          facilities?: string[] | null
+          id?: string
+          last_notified_at?: string | null
+          location?: string | null
+          notify_enabled?: boolean
+          property_type?: string | null
+          search_name?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_max?: number | null
+          budget_min?: number | null
+          created_at?: string
+          facilities?: string[] | null
+          id?: string
+          last_notified_at?: string | null
+          location?: string | null
+          notify_enabled?: boolean
+          property_type?: string | null
+          search_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
