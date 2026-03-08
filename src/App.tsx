@@ -12,6 +12,7 @@ import Profile from "./pages/Profile";
 import Properties from "./pages/Properties";
 import PropertyDetail from "./pages/PropertyDetail";
 import MyMatches from "./pages/MyMatches";
+import Messages from "./pages/Messages";
 import Dashboard from "./pages/Dashboard";
 import LandlordDashboard from "./pages/LandlordDashboard";
 import LandlordOnboarding from "./pages/LandlordOnboarding";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/properties" element={<Properties />} />
             <Route path="/property/:id" element={<PropertyDetail />} />
             <Route path="/my-matches" element={<MyMatches />} />
+            <Route path="/messages" element={<Messages />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/landlord" element={<LandlordDashboard />} />
             <Route path="/landlord/register" element={<LandlordOnboarding />} />

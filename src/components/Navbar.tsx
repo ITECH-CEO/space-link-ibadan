@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Building2, User, Handshake, Home } from "lucide-react";
+import { LogOut, LayoutDashboard, Building2, User, Handshake, Home, MessageCircle } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import mycribLogo from "@/assets/mycrib-logo.png";
 
