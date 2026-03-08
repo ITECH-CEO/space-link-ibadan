@@ -20,7 +20,7 @@ export function HeroSearch() {
   };
 
   return (
-    <div className="mx-auto mt-8 max-w-4xl">
+    <div className="mx-auto mt-8 max-w-4xl" data-tour="hero-search">
       <div className="rounded-2xl bg-card p-4 shadow-2xl">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
           {/* Location */}
