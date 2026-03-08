@@ -10,8 +10,10 @@ import { VerificationBadge } from "@/components/VerificationBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { MapPin, Users, Phone, Mail, ArrowLeft, DollarSign, Building2, CalendarDays, Clock, CheckCircle } from "lucide-react";
+import { MapPin, Users, Phone, Mail, ArrowLeft, DollarSign, Building2, CalendarDays, Clock, CheckCircle, XCircle, Star, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
@@ -28,6 +30,14 @@ interface InspectionSlot {
   current_bookings: number;
 }
 
+interface BookingInfo {
+  id: string;
+  status: string;
+  slot_id: string;
+  slot_date?: string;
+  slot_time?: string;
+}
+
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
   const { user, userRole } = useAuth();
@@ -36,8 +46,17 @@ export default function PropertyDetail() {
   const [slots, setSlots] = useState<InspectionSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [booking, setBooking] = useState(false);
-  const [booked, setBooked] = useState(false);
+  const [bookingInfo, setBookingInfo] = useState<BookingInfo | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  // Feedback state
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackComments, setFeedbackComments] = useState("");
+  const [feedbackInterested, setFeedbackInterested] = useState(false);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [hasFeedback, setHasFeedback] = useState(false);
 
   const isAdmin = userRole === "super_admin" || userRole === "manager" || userRole === "verifier";
   const isLandlord = userRole === "landlord";
@@ -65,15 +84,38 @@ export default function PropertyDetail() {
       .order("slot_time", { ascending: true })
       .then(({ data }: any) => setSlots(data || []));
 
-    // Check if user already booked
+    // Check if user already booked & get booking details
     if (user) {
       (supabase as any)
         .from("inspection_bookings")
-        .select("id")
+        .select("id, status, slot_id")
         .eq("property_id", id)
         .eq("user_id", user.id)
         .maybeSingle()
-        .then(({ data }: any) => { if (data) setBooked(true); });
+        .then(async ({ data }: any) => {
+          if (data) {
+            // Get slot info
+            const { data: slotData } = await (supabase as any)
+              .from("inspection_slots")
+              .select("slot_date, slot_time")
+              .eq("id", data.slot_id)
+              .single();
+            setBookingInfo({
+              ...data,
+              slot_date: slotData?.slot_date,
+              slot_time: slotData?.slot_time,
+            });
+
+            // Check if feedback exists
+            const { data: fb } = await (supabase as any)
+              .from("inspection_feedback")
+              .select("id")
+              .eq("booking_id", data.id)
+              .eq("user_id", user.id)
+              .maybeSingle();
+            if (fb) setHasFeedback(true);
+          }
+        });
     }
   }, [id, user]);
 
@@ -86,7 +128,6 @@ export default function PropertyDetail() {
     if (!user) { toast.error("Please sign in first"); return; }
     setBooking(true);
 
-    // Get client record
     const { data: client } = await (supabase as any)
       .from("clients")
       .select("id")
@@ -110,16 +151,64 @@ export default function PropertyDetail() {
       toast.error(error.message || "Booking failed");
     } else {
       toast.success("Inspection booked! You'll receive a confirmation notification.");
-      setBooked(true);
+      setBookingInfo({
+        id: "", status: "confirmed", slot_id: slot.id,
+        slot_date: slot.slot_date, slot_time: slot.slot_time,
+      });
       setDialogOpen(false);
     }
     setBooking(false);
+  };
+
+  const cancelBooking = async () => {
+    if (!bookingInfo) return;
+    setCancelling(true);
+    const { error } = await (supabase as any)
+      .from("inspection_bookings")
+      .update({ status: "cancelled" })
+      .eq("id", bookingInfo.id);
+    if (error) {
+      toast.error(error.message || "Cancellation failed");
+    } else {
+      toast.success("Inspection cancelled. The slot is now available for others.");
+      setBookingInfo({ ...bookingInfo, status: "cancelled" });
+    }
+    setCancelling(false);
+  };
+
+  const submitFeedback = async () => {
+    if (!user || !bookingInfo || !id) return;
+    if (feedbackRating === 0) { toast.error("Please select a rating"); return; }
+    setSubmittingFeedback(true);
+    const { error } = await (supabase as any).from("inspection_feedback").insert({
+      booking_id: bookingInfo.id,
+      user_id: user.id,
+      property_id: id,
+      rating: feedbackRating,
+      comments: feedbackComments || null,
+      interested: feedbackInterested,
+    });
+    if (error) {
+      toast.error(error.message || "Failed to submit feedback");
+    } else {
+      toast.success("Thank you for your feedback!");
+      setHasFeedback(true);
+      setFeedbackDialogOpen(false);
+    }
+    setSubmittingFeedback(false);
   };
 
   const isDayAvailable = (date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
     return availableDates.includes(dateStr);
   };
+
+  const whatsAppMessage = property && bookingInfo?.slot_date
+    ? `Hi MyCrib.ng, I've booked an inspection for "${property.property_name}" at ${property.address} on ${bookingInfo.slot_date} at ${bookingInfo.slot_time?.slice(0, 5)}. Please confirm.`
+    : "";
+
+  // Check if booking date has passed (for feedback prompt)
+  const bookingPassed = bookingInfo?.slot_date && new Date(bookingInfo.slot_date) < new Date();
 
   if (loading) {
     return (
@@ -260,11 +349,108 @@ export default function PropertyDetail() {
             <Card>
               <CardHeader><CardTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5" /> Schedule Inspection</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                {booked ? (
+                {bookingInfo && bookingInfo.status !== "cancelled" ? (
+                  <div className="space-y-4">
+                    <div className="text-center py-3">
+                      <CheckCircle className="mx-auto h-10 w-10 text-success mb-2" />
+                      <p className="font-semibold text-success">Inspection Booked!</p>
+                      {bookingInfo.slot_date && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          📅 {bookingInfo.slot_date} at {bookingInfo.slot_time?.slice(0, 5)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* WhatsApp confirmation */}
+                    {whatsAppMessage && (
+                      <a
+                        href={`https://wa.me/2349139aborede?text=${encodeURIComponent(whatsAppMessage)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        <Button variant="outline" className="w-full border-success/30 text-success hover:bg-success/10">
+                          <MessageSquare className="mr-2 h-4 w-4" /> Confirm via WhatsApp
+                        </Button>
+                      </a>
+                    )}
+
+                    {/* Cancel button */}
+                    <Button
+                      variant="outline"
+                      className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
+                      onClick={cancelBooking}
+                      disabled={cancelling}
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      {cancelling ? "Cancelling..." : "Cancel Inspection"}
+                    </Button>
+
+                    {/* Post-inspection feedback */}
+                    {bookingPassed && !hasFeedback && (
+                      <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="w-full gradient-accent text-accent-foreground">
+                            <Star className="mr-2 h-4 w-4" /> Rate This Property
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader><DialogTitle>How was your inspection?</DialogTitle></DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label className="mb-2 block">Rating</Label>
+                              <div className="flex gap-1">
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                  <button key={s} onClick={() => setFeedbackRating(s)} className="p-1">
+                                    <Star className={cn("h-7 w-7 transition-colors", s <= feedbackRating ? "fill-warning text-warning" : "text-muted-foreground/30")} />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <Label>Comments (optional)</Label>
+                              <Textarea value={feedbackComments} onChange={(e) => setFeedbackComments(e.target.value)} placeholder="Share your experience..." className="mt-1" />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input type="checkbox" id="interested" checked={feedbackInterested} onChange={(e) => setFeedbackInterested(e.target.checked)} className="rounded" />
+                              <Label htmlFor="interested" className="text-sm">I'm interested in renting here</Label>
+                            </div>
+                            <Button onClick={submitFeedback} disabled={submittingFeedback} className="w-full gradient-primary text-primary-foreground">
+                              {submittingFeedback ? "Submitting..." : "Submit Feedback"}
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                    {hasFeedback && (
+                      <p className="text-xs text-muted-foreground text-center">✅ Feedback submitted. Thank you!</p>
+                    )}
+                  </div>
+                ) : bookingInfo?.status === "cancelled" ? (
                   <div className="text-center py-4">
-                    <CheckCircle className="mx-auto h-10 w-10 text-success mb-2" />
-                    <p className="font-semibold text-success">Inspection Booked!</p>
-                    <p className="text-sm text-muted-foreground mt-1">Check your notifications for details.</p>
+                    <XCircle className="mx-auto h-10 w-10 text-muted-foreground/40 mb-2" />
+                    <p className="font-semibold text-muted-foreground">Inspection Cancelled</p>
+                    <p className="text-sm text-muted-foreground mt-1">You can book a new slot below.</p>
+                    {slots.length > 0 && (
+                      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="mt-3 gradient-accent text-accent-foreground font-semibold">
+                            <CalendarDays className="mr-2 h-4 w-4" /> Book Again
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader><DialogTitle>Pick an Inspection Date & Time</DialogTitle></DialogHeader>
+                          <BookingCalendar
+                            selectedDate={selectedDate}
+                            onSelectDate={setSelectedDate}
+                            isDayAvailable={isDayAvailable}
+                            slotsForDate={slotsForDate}
+                            booking={booking}
+                            onBookSlot={bookSlot}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </div>
                 ) : slots.length === 0 ? (
                   <div>
@@ -285,46 +471,15 @@ export default function PropertyDetail() {
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Pick an Inspection Date & Time</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          disabled={(date) => !isDayAvailable(date)}
-                          className={cn("p-3 pointer-events-auto rounded-md border mx-auto")}
-                        />
-                        {selectedDate && (
-                          <div>
-                            <h4 className="text-sm font-medium mb-2">
-                              Available times for {format(selectedDate, "PPP")}:
-                            </h4>
-                            {slotsForDate.length === 0 ? (
-                              <p className="text-sm text-muted-foreground">All slots are full for this date.</p>
-                            ) : (
-                              <div className="grid grid-cols-2 gap-2">
-                                {slotsForDate.map((slot) => (
-                                  <Button
-                                    key={slot.id}
-                                    variant="outline"
-                                    onClick={() => bookSlot(slot)}
-                                    disabled={booking}
-                                    className="flex items-center gap-2"
-                                  >
-                                    <Clock className="h-3 w-3" />
-                                    {slot.slot_time.slice(0, 5)}
-                                    <span className="text-xs text-muted-foreground">
-                                      ({slot.max_bookings - slot.current_bookings} left)
-                                    </span>
-                                  </Button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      <DialogHeader><DialogTitle>Pick an Inspection Date & Time</DialogTitle></DialogHeader>
+                      <BookingCalendar
+                        selectedDate={selectedDate}
+                        onSelectDate={setSelectedDate}
+                        isDayAvailable={isDayAvailable}
+                        slotsForDate={slotsForDate}
+                        booking={booking}
+                        onBookSlot={bookSlot}
+                      />
                     </DialogContent>
                   </Dialog>
                 )}
@@ -365,6 +520,58 @@ export default function PropertyDetail() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+// Extracted calendar component to reduce duplication
+function BookingCalendar({
+  selectedDate, onSelectDate, isDayAvailable, slotsForDate, booking, onBookSlot,
+}: {
+  selectedDate: Date | undefined;
+  onSelectDate: (d: Date | undefined) => void;
+  isDayAvailable: (d: Date) => boolean;
+  slotsForDate: InspectionSlot[];
+  booking: boolean;
+  onBookSlot: (s: InspectionSlot) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <Calendar
+        mode="single"
+        selected={selectedDate}
+        onSelect={onSelectDate}
+        disabled={(date) => !isDayAvailable(date)}
+        className={cn("p-3 pointer-events-auto rounded-md border mx-auto")}
+      />
+      {selectedDate && (
+        <div>
+          <h4 className="text-sm font-medium mb-2">
+            Available times for {format(selectedDate, "PPP")}:
+          </h4>
+          {slotsForDate.length === 0 ? (
+            <p className="text-sm text-muted-foreground">All slots are full for this date.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {slotsForDate.map((slot) => (
+                <Button
+                  key={slot.id}
+                  variant="outline"
+                  onClick={() => onBookSlot(slot)}
+                  disabled={booking}
+                  className="flex items-center gap-2"
+                >
+                  <Clock className="h-3 w-3" />
+                  {slot.slot_time.slice(0, 5)}
+                  <span className="text-xs text-muted-foreground">
+                    ({slot.max_bookings - slot.current_bookings} left)
+                  </span>
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
