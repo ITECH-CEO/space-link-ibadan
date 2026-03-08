@@ -16,6 +16,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 export function ClientsTab() {
   const [clients, setClients] = useState<Tables<"clients">[]>([]);
+  const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [editClient, setEditClient] = useState<Tables<"clients"> | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -27,6 +28,13 @@ export function ClientsTab() {
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
     setClients(data || []);
+    
+    // Fetch admin notes separately from secure table
+    const { data: notesData } = await (supabase as any).from("client_admin_notes").select("client_id, notes");
+    const notesMap: Record<string, string> = {};
+    (notesData || []).forEach((n: any) => { if (n.notes) notesMap[n.client_id] = n.notes; });
+    setAdminNotes(notesMap);
+    
     setLoading(false);
   };
 
@@ -64,7 +72,7 @@ export function ClientsTab() {
       guarantor_name: c.guarantor_name || "",
       guarantor_phone: c.guarantor_phone || "",
       guarantor_relationship: c.guarantor_relationship || "",
-      admin_notes: c.admin_notes || "",
+      admin_notes: adminNotes[c.id] || "",
       verification_status: c.verification_status,
     });
     setEditDialogOpen(true);
@@ -73,6 +81,8 @@ export function ClientsTab() {
   const saveEdit = async () => {
     if (!editClient) return;
     setSaving(true);
+    
+    // Update client data (without admin_notes - that's in a separate secure table now)
     const { error } = await supabase
       .from("clients")
       .update({
@@ -89,10 +99,26 @@ export function ClientsTab() {
         guarantor_name: editForm.guarantor_name || null,
         guarantor_phone: editForm.guarantor_phone || null,
         guarantor_relationship: editForm.guarantor_relationship || null,
-        admin_notes: editForm.admin_notes || null,
         verification_status: editForm.verification_status,
       })
       .eq("id", editClient.id);
+    
+    // Save admin notes to separate secure table
+    if (editForm.admin_notes) {
+      await (supabase as any).from("client_admin_notes").upsert({
+        client_id: editClient.id,
+        notes: editForm.admin_notes,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "client_id" });
+    }
+
+    // Log access to sensitive data
+    await (supabase as any).from("sensitive_data_access_log").insert({
+      accessor_user_id: (await supabase.auth.getUser()).data.user?.id,
+      client_id: editClient.id,
+      access_type: "edit_client",
+    });
+    
     if (error) toast.error(error.message);
     else {
       toast.success("Client updated successfully");
@@ -102,10 +128,15 @@ export function ClientsTab() {
     setSaving(false);
   };
 
+  const maskNin = (nin: string | null) => {
+    if (!nin || nin.length < 4) return nin || "—";
+    return "****" + nin.slice(-4);
+  };
+
   const verificationChecks = (c: Tables<"clients">) => [
     { label: "Full Name", done: !!c.full_name, value: c.full_name },
     { label: "Phone", done: !!c.phone, value: c.phone },
-    { label: "NIN", done: !!c.nin, value: c.nin },
+    { label: "NIN", done: !!c.nin, value: maskNin(c.nin) },
     { label: "Government ID", done: !!c.government_id_url, value: c.government_id_url ? "Uploaded" : "Missing" },
     { label: "Proof of Admission", done: !!c.proof_of_admission_url, value: c.proof_of_admission_url ? "Uploaded" : "Missing" },
     { label: "Current Photo", done: !!c.current_photo_url, value: c.current_photo_url ? "Uploaded" : "Missing" },
