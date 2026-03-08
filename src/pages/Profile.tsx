@@ -68,6 +68,7 @@ export default function Profile() {
             current_photo_url: data.current_photo_url || "",
             course: data.course || "", faculty: data.faculty || "", level: data.level || "",
             seeking_roommate: data.seeking_roommate || false,
+            gender: data.gender || "",
           });
         }
       });
