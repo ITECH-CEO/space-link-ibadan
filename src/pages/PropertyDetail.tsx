@@ -178,7 +178,7 @@ export default function PropertyDetail() {
               <CardHeader><CardTitle>Interested?</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Contact SpaceLink to arrange a viewing or get matched with this property. All bookings go through our platform to ensure your safety and satisfaction.
+                  Contact MyCrib.ng to arrange a viewing or get matched with this property. All bookings go through our platform to ensure your safety and satisfaction.
                 </p>
                 <Link to="/profile">
                   <Button className="w-full gradient-primary text-primary-foreground">

@@ -79,7 +79,7 @@ export function MatchesTab() {
     if (!phone) { toast.error("No phone number available"); return; }
     const cleanPhone = phone.replace(/\D/g, "");
     const message = encodeURIComponent(
-      `Hello! You've been matched to "${propertyName || 'a property'}" on SpaceLink. Contact us to schedule an inspection! 🏠`
+      `Hello! You've been matched to "${propertyName || 'a property'}" on MyCrib.ng. Contact us to schedule an inspection! 🏠`
     );
     window.open(`https://wa.me/${cleanPhone}?text=${message}`, "_blank");
   };
