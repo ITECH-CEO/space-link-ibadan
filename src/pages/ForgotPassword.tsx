@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ArrowLeft, Mail } from "lucide-react";
-import unispaceLogo from "@/assets/unispace-logo.jpg";
+import mycribLogo from "@/assets/mycrib-logo.png";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -29,7 +29,7 @@ export default function ForgotPassword() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-md">
        <CardHeader className="text-center">
-          <img src={unispaceLogo} alt="UNISPACE.NG" className="mx-auto mb-4 h-16 w-16 rounded-xl object-cover" />
+          <img src={mycribLogo} alt="MyCrib.ng" className="mx-auto mb-4 h-16 w-16 rounded-xl object-contain" />
           <CardTitle className="font-display text-2xl">Reset Password</CardTitle>
           <CardDescription>We'll send you a link to reset your password</CardDescription>
         </CardHeader>

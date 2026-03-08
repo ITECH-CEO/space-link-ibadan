@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import unispaceLogo from "@/assets/unispace-logo.jpg";
+import mycribLogo from "@/assets/mycrib-logo.png";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -38,14 +38,14 @@ export default function Auth() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <img src={unispaceLogo} alt="UNISPACE.NG" className="mx-auto mb-4 h-16 w-16 rounded-xl object-cover" />
+          <img src={mycribLogo} alt="MyCrib.ng" className="mx-auto mb-4 h-16 w-16 rounded-xl object-contain" />
           <CardTitle className="font-display text-2xl">
             {mode === "signin" ? "Welcome Back" : "Create Account"}
           </CardTitle>
           <CardDescription>
             {mode === "signin"
-              ? "Sign in to your UNISPACE.NG account"
-              : "Join UNISPACE.NG to find your perfect accommodation"}
+              ? "Sign in to your MyCrib.ng account"
+              : "Join MyCrib.ng to find your perfect accommodation"}
           </CardDescription>
         </CardHeader>
         <CardContent>
