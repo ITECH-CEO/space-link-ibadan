@@ -4,7 +4,7 @@ import { Check, CheckCheck, Reply, Smile, FileText, Download, X } from "lucide-r
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ImageLightbox } from "@/components/ImageLightbox";
+
 
 export interface MessageReaction {
   emoji: string;
