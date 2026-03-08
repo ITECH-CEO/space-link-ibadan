@@ -18,6 +18,7 @@ import LandlordDashboard from "./pages/LandlordDashboard";
 import LandlordOnboarding from "./pages/LandlordOnboarding";
 import Onboarding from "./pages/Onboarding";
 import Support from "./pages/Support";
+import LeaseView from "./pages/LeaseView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
