@@ -23,10 +23,11 @@ import { RentTrackingTab } from "@/components/dashboard/RentTrackingTab";
 import { ComplaintsTab } from "@/components/dashboard/ComplaintsTab";
 import { PlatformComplaintsTab } from "@/components/dashboard/PlatformComplaintsTab";
 import { OccupancyTab } from "@/components/dashboard/OccupancyTab";
+import { SponsorsTab } from "@/components/dashboard/SponsorsTab";
 import {
   LayoutDashboard, Users, Building2, Handshake, Banknote, Wrench,
   ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings,
-  LogOut, Moon, Sun, Home, ChevronRight, MessageSquareWarning,
+  LogOut, Moon, Sun, Home, ChevronRight, MessageSquareWarning, Award,
 } from "lucide-react";
 
 const navItems = [
@@ -41,6 +42,7 @@ const navItems = [
   { key: "complaints", label: "Maintenance", icon: Wrench, roles: ["super_admin", "manager"] },
   { key: "platform_complaints", label: "Platform Complaints", icon: MessageSquareWarning, roles: ["super_admin", "manager"] },
   { key: "occupancy", label: "Occupancy", icon: Building2, roles: ["super_admin", "manager"] },
+  { key: "sponsors", label: "Sponsors", icon: Award, roles: ["super_admin", "manager"] },
   { key: "admins", label: "Admins", icon: ShieldCheck, roles: ["super_admin"] },
   { key: "analytics", label: "Analytics", icon: BarChart3, roles: ["super_admin", "manager"] },
   { key: "fees", label: "Fees", icon: Settings, roles: ["super_admin"] },
@@ -52,6 +54,7 @@ const tabComponents: Record<string, React.ComponentType> = {
   matches: MatchesTab, roommates: RoommateMatchesTab, commissions: CommissionsTab,
   inspections: InspectionsTab, rent: RentTrackingTab, complaints: ComplaintsTab,
   platform_complaints: PlatformComplaintsTab, occupancy: OccupancyTab,
+  sponsors: SponsorsTab,
   admins: AdminsTab, analytics: AnalyticsTab, fees: FeesTab, settings: SettingsTab,
 };
 

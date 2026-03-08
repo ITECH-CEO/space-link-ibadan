@@ -12,6 +12,7 @@ import { HeroSearch } from "@/components/HeroSearch";
 import { CampusCards } from "@/components/CampusCards";
 import { SuccessStories } from "@/components/SuccessStories";
 import { FeaturedProperties } from "@/components/FeaturedProperties";
+import { SponsorsDisplay } from "@/components/SponsorsDisplay";
 import { HomeTour } from "@/components/tours/HomeTour";
 import mycribLogo from "@/assets/mycrib-logo.png";
 
@@ -132,6 +133,7 @@ export default function Index() {
         </div>
       </section>
 
+      <SponsorsDisplay />
       <Footer />
       <WhatsAppButton />
       <HomeTour />

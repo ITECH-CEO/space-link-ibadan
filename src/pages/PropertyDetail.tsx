@@ -21,6 +21,7 @@ import { InspectionBookingWizard } from "@/components/InspectionBookingWizard";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { PropertyReviews } from "@/components/PropertyReviews";
 import { PanoramaViewer } from "@/components/PanoramaViewer";
+import { SponsorsDisplay } from "@/components/SponsorsDisplay";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
@@ -588,6 +589,9 @@ export default function PropertyDetail() {
 
         {/* Reviews Section */}
         <PropertyReviews propertyId={id!} />
+
+        {/* Sponsors for this property */}
+        <SponsorsDisplay propertyId={id} />
       </main>
     </div>
   );

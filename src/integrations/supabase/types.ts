@@ -1303,6 +1303,71 @@ export type Database = {
         }
         Relationships: []
       }
+      sponsors: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          display_order: number
+          end_date: string | null
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          payment_status: string
+          property_id: string | null
+          sponsor_type: string
+          start_date: string | null
+          tier: string
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          payment_status?: string
+          property_id?: string | null
+          sponsor_type?: string
+          start_date?: string | null
+          tier?: string
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          payment_status?: string
+          property_id?: string | null
+          sponsor_type?: string
+          start_date?: string | null
+          tier?: string
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsors_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
