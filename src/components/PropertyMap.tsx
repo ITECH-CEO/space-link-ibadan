@@ -20,10 +20,9 @@ interface PropertyForMap {
   property_name: string;
   address: string;
   property_type: string;
-  latitude?: number | null;
-  longitude?: number | null;
   available_rooms?: number | null;
   total_rooms?: number | null;
+  [key: string]: any; // Allow latitude/longitude from DB
 }
 
 export function PropertyMap({ properties }: { properties: PropertyForMap[] }) {
