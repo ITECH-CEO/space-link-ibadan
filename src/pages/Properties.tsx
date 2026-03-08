@@ -19,6 +19,7 @@ import { motion } from "framer-motion";
 import type { Tables } from "@/integrations/supabase/types";
 import { PropertyMap } from "@/components/PropertyMap";
 import { PropertyCarousel } from "@/components/PropertyCarousel";
+import { PropertiesTour } from "@/components/tours/PropertiesTour";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
