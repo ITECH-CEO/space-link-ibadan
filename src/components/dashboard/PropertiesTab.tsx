@@ -115,7 +115,10 @@ export function PropertiesTab() {
               </TableHeader>
               <TableBody>
                 {properties.map((p) => (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} data-state={selected.has(p.id) ? "selected" : undefined}>
+                    <TableCell>
+                      <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
+                    </TableCell>
                     <TableCell className="font-medium">{p.property_name}</TableCell>
                     <TableCell>{p.landlord_name}</TableCell>
                     <TableCell className="capitalize">{p.property_type}</TableCell>
