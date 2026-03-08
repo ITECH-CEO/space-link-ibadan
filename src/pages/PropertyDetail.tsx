@@ -223,11 +223,6 @@ export default function PropertyDetail() {
     setSubmittingFeedback(false);
   };
 
-  const isDayAvailable = (date: Date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    return availableDates.includes(dateStr);
-  };
-
   const whatsAppMessage = property && bookingInfo?.slot_date
     ? `Hi MyCrib.ng, I've booked an inspection for "${property.property_name}" at ${property.address} on ${bookingInfo.slot_date} at ${bookingInfo.slot_time?.slice(0, 5)}. Please confirm.`
     : "";
