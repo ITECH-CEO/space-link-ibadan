@@ -247,6 +247,21 @@ export default function PropertyDetail() {
           </div>
         )}
 
+        {/* 360° Virtual Tour */}
+        {(property as any).panorama_photos && (property as any).panorama_photos.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="mb-6"
+          >
+            <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
+              🔄 360° Virtual Tour
+            </h2>
+            <PanoramaViewer images={(property as any).panorama_photos} />
+          </motion.div>
+        )}
+
         {/* Location & Transport Info */}
         {(property.distance_to_campus_km || (property as any).walkability_rating || ((property as any).transport_options && (property as any).transport_options.length > 0)) && (
           <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

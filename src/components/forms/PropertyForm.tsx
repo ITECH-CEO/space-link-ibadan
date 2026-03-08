@@ -415,6 +415,28 @@ export function PropertyForm({ onSuccess }: { onSuccess: () => void }) {
               </div>
             )}
           </div>
+
+          {/* 360° Panoramas */}
+          <div className="space-y-2 sm:col-span-2">
+            <Label className="flex items-center gap-2"><RotateCcw className="h-4 w-4" />360° Panorama Photos (max 5)</Label>
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-input p-4 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+              <Upload className="h-4 w-4" />
+              Upload panoramic/360° photos (up to 10MB each)
+              <input type="file" accept="image/*" multiple onChange={handlePanoramaSelect} className="hidden" />
+            </label>
+            {panoramas.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {panoramas.map((f, i) => (
+                  <div key={i} className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs">
+                    <span className="truncate max-w-[100px]">{f.name}</span>
+                    <button type="button" onClick={() => setPanoramas((prev) => prev.filter((_, j) => j !== i))}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
