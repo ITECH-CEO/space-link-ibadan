@@ -32,6 +32,10 @@ export function Navbar() {
                   <span className="hidden sm:inline">My Matches</span>
                 </Button>
               )}
+              <Button variant="ghost" size="sm" onClick={() => navigate("/messages")}>
+                <MessageCircle className="mr-1.5 h-4 w-4" />
+                <span className="hidden sm:inline">Messages</span>
+              </Button>
               {isLandlord && (
                 <>
                   <Button variant="ghost" size="sm" onClick={() => navigate("/landlord")}>
