@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
@@ -17,6 +17,7 @@ import { MapPin, Users, Phone, Mail, ArrowLeft, DollarSign, Building2, CalendarD
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
+import { InspectionBookingWizard } from "@/components/InspectionBookingWizard";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
