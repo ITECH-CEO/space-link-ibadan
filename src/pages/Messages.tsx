@@ -209,7 +209,7 @@ export default function Messages() {
         <h1 className="font-display text-3xl font-bold mb-6">Messages</h1>
         <div className="grid gap-6 md:grid-cols-[300px_1fr] h-[calc(100vh-220px)]">
           {/* Conversation list */}
-          <Card className="overflow-hidden">
+          <Card className={`overflow-hidden ${activeConvo ? "hidden md:block" : ""}`}>
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm flex items-center gap-2">
                 <MessageCircle className="h-4 w-4" /> Conversations

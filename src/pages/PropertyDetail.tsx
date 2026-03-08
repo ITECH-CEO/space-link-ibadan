@@ -364,7 +364,7 @@ export default function PropertyDetail() {
                     {/* WhatsApp confirmation */}
                     {whatsAppMessage && (
                       <a
-                        href={`https://wa.me/2349139aborede?text=${encodeURIComponent(whatsAppMessage)}`}
+                        href={`https://wa.me/2349137425552?text=${encodeURIComponent(whatsAppMessage)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block"
