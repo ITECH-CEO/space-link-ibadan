@@ -19,7 +19,7 @@ import { AnalyticsTab } from "@/components/dashboard/AnalyticsTab";
 import { InspectionsTab } from "@/components/dashboard/InspectionsTab";
 import { FeesTab } from "@/components/dashboard/FeesTab";
 import {
-  LayoutDashboard, Users, Building2, Handshake, DollarSign,
+  LayoutDashboard, Users, Building2, Handshake, Banknote,
   ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings,
   LogOut, Moon, Sun, Home, ChevronRight,
 } from "lucide-react";
