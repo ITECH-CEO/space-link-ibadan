@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
@@ -15,6 +15,7 @@ import { Building2, MapPin, Users, Search, DollarSign, SlidersHorizontal, X, Hea
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { PropertyMap } from "@/components/PropertyMap";
+import { PropertyCarousel } from "@/components/PropertyCarousel";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
