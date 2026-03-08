@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Heart, Search, Check, ArrowRight, ArrowLeft, Loader2, Sparkles,
 } from "lucide-react";
+import { OnboardingTour } from "@/components/tours/OnboardingTour";
 
 const STEPS = [
   { label: "About You", icon: User, description: "Basic info" },
@@ -134,7 +135,7 @@ export default function Onboarding() {
           </div>
 
           {/* Simple Progress Bar */}
-          <div className="flex items-center gap-2 mb-6 px-2">
+          <div className="flex items-center gap-2 mb-6 px-2" data-tour="onboarding-progress">
             {STEPS.map((s, i) => (
               <div key={i} className="flex-1">
                 <div className={cn(
@@ -149,7 +150,7 @@ export default function Onboarding() {
             ))}
           </div>
 
-          <Card className="card-elevated border-border/50 overflow-hidden">
+          <Card className="card-elevated border-border/50 overflow-hidden" data-tour="onboarding-form">
             <CardContent className="pt-6 pb-8">
               <AnimatePresence mode="wait" custom={direction}>
                 <motion.div
@@ -316,7 +317,7 @@ export default function Onboarding() {
                 )}
 
                 {step < STEPS.length - 1 ? (
-                  <Button onClick={next} disabled={!canProceed()} className="gradient-primary text-primary-foreground">
+                  <Button onClick={next} disabled={!canProceed()} className="gradient-primary text-primary-foreground" data-tour="onboarding-next">
                     Next <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
                 ) : (
@@ -329,6 +330,7 @@ export default function Onboarding() {
           </Card>
         </motion.div>
       </main>
+      <OnboardingTour />
     </div>
   );
 }

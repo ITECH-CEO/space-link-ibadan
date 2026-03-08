@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Handshake, Building2, MapPin, DollarSign, Users, Sparkles, Loader2, MessageSquare, LayoutGrid, Heart, CheckCheck, X } from "lucide-react";
 import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
 import { motion } from "framer-motion";
+import { MatchesTour } from "@/components/tours/MatchesTour";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
@@ -209,7 +210,7 @@ export default function MyMatches() {
           <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}</div>
         ) : (
           <Tabs defaultValue="properties">
-            <TabsList className="mb-4">
+            <TabsList className="mb-4" data-tour="matches-tabs">
               <TabsTrigger value="properties"><Building2 className="mr-2 h-4 w-4" />Properties ({matches.length})</TabsTrigger>
               <TabsTrigger value="roommates"><Users className="mr-2 h-4 w-4" />Roommates ({roommateMatches.length})</TabsTrigger>
             </TabsList>
@@ -264,7 +265,7 @@ export default function MyMatches() {
             </TabsContent>
 
             <TabsContent value="roommates">
-              <Card className="mb-4 border-primary/20 card-elevated">
+              <Card className="mb-4 border-primary/20 card-elevated" data-tour="roommate-find">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -357,7 +358,7 @@ export default function MyMatches() {
                     <h3 className="font-display font-semibold text-sm text-muted-foreground">
                       Pending ({pendingRoommates.filter(m => m.my_status === "pending").length} to review)
                     </h3>
-                    <Button variant="outline" size="sm" onClick={() => setSwipeView(true)} className="text-sm">
+                    <Button variant="outline" size="sm" onClick={() => setSwipeView(true)} className="text-sm" data-tour="roommate-swipe">
                       <LayoutGrid className="mr-2 h-4 w-4" /> Swipe View
                     </Button>
                   </div>
@@ -431,6 +432,7 @@ export default function MyMatches() {
         )}
       </main>
       <WhatsAppButton />
+      <MatchesTour />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { CalendarDays, Clock, Check, MapPin, Building2, ArrowLeft, ArrowRight, Loader2, Shield } from "lucide-react";
+import { InspectionTour } from "@/components/tours/InspectionTour";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -101,7 +102,8 @@ export function InspectionBookingWizard({
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6" data-tour="inspection-progress">
       {/* Progress Bar */}
       <div className="flex items-center justify-between px-2">
         {STEPS.map((s, i) => {
@@ -134,7 +136,7 @@ export function InspectionBookingWizard({
       {/* Step 1: Pick a Slot */}
       {step === 0 && (
         <div className="space-y-4">
-          <Calendar
+          <Calendar data-tour="inspection-calendar"
             mode="single"
             selected={selectedDate}
             onSelect={(d) => { setSelectedDate(d); setSelectedSlot(null); }}
@@ -265,7 +267,9 @@ export function InspectionBookingWizard({
             </Button>
           </div>
         </div>
-      )}
-    </div>
+        )}
+      </div>
+      <InspectionTour />
+    </>
   );
 }

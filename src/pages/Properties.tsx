@@ -19,6 +19,7 @@ import { motion } from "framer-motion";
 import type { Tables } from "@/integrations/supabase/types";
 import { PropertyMap } from "@/components/PropertyMap";
 import { PropertyCarousel } from "@/components/PropertyCarousel";
+import { PropertiesTour } from "@/components/tours/PropertiesTour";
 
 interface PropertyWithRooms extends Tables<"properties"> {
   room_types: Tables<"room_types">[];
@@ -224,7 +225,7 @@ export default function Properties() {
 
         {/* Search + Filter Toggle */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-          <div className="relative flex-1">
+          <div className="relative flex-1" data-tour="properties-search">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by name, address, or location..."
@@ -234,7 +235,7 @@ export default function Properties() {
               maxLength={100}
             />
           </div>
-          <Button
+          <Button data-tour="properties-filters"
             variant={showFilters ? "default" : "outline"}
             onClick={() => setShowFilters(!showFilters)}
             className={showFilters ? "gradient-primary text-primary-foreground" : ""}
@@ -316,7 +317,7 @@ export default function Properties() {
           </div>
         ) : (
           <Tabs defaultValue="list">
-            <TabsList className="mb-4">
+            <TabsList className="mb-4" data-tour="properties-views">
               <TabsTrigger value="list"><List className="mr-2 h-4 w-4" />List</TabsTrigger>
               <TabsTrigger value="map"><Map className="mr-2 h-4 w-4" />Map</TabsTrigger>
               {savedIds.size > 0 && (
@@ -351,6 +352,7 @@ export default function Properties() {
         )}
       </main>
       <Footer />
+      <PropertiesTour />
     </div>
   );
 }
