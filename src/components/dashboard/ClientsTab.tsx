@@ -81,6 +81,8 @@ export function ClientsTab() {
   const saveEdit = async () => {
     if (!editClient) return;
     setSaving(true);
+    
+    // Update client data (without admin_notes - that's in a separate secure table now)
     const { error } = await supabase
       .from("clients")
       .update({
@@ -97,10 +99,26 @@ export function ClientsTab() {
         guarantor_name: editForm.guarantor_name || null,
         guarantor_phone: editForm.guarantor_phone || null,
         guarantor_relationship: editForm.guarantor_relationship || null,
-        admin_notes: editForm.admin_notes || null,
         verification_status: editForm.verification_status,
       })
       .eq("id", editClient.id);
+    
+    // Save admin notes to separate secure table
+    if (editForm.admin_notes) {
+      await (supabase as any).from("client_admin_notes").upsert({
+        client_id: editClient.id,
+        notes: editForm.admin_notes,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "client_id" });
+    }
+
+    // Log access to sensitive data
+    await (supabase as any).from("sensitive_data_access_log").insert({
+      accessor_user_id: (await supabase.auth.getUser()).data.user?.id,
+      client_id: editClient.id,
+      access_type: "edit_client",
+    });
+    
     if (error) toast.error(error.message);
     else {
       toast.success("Client updated successfully");
