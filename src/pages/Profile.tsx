@@ -122,6 +122,7 @@ export default function Profile() {
 
   const verificationSteps = [
     { label: "Full Name", done: !!form.full_name },
+    { label: "Gender", done: !!form.gender },
     { label: "Phone Number", done: !!form.phone },
     { label: "NIN / Gov ID Number", done: !!form.nin },
     { label: "Government ID Upload", done: !!form.government_id_url },
