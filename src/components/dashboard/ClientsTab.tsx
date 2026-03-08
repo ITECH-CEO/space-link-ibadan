@@ -72,7 +72,7 @@ export function ClientsTab() {
       guarantor_name: c.guarantor_name || "",
       guarantor_phone: c.guarantor_phone || "",
       guarantor_relationship: c.guarantor_relationship || "",
-      admin_notes: c.admin_notes || "",
+      admin_notes: adminNotes[c.id] || "",
       verification_status: c.verification_status,
     });
     setEditDialogOpen(true);
