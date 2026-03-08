@@ -106,7 +106,7 @@ export function OverviewTab() {
   }, []);
 
   const typeIcons: Record<string, React.ElementType> = {
-    property: Building2, client: Users, match: Handshake, commission: DollarSign, inspection: Clock,
+    property: Building2, client: Users, match: Handshake, commission: Banknote, inspection: Clock,
   };
 
   const typeColors: Record<string, string> = {

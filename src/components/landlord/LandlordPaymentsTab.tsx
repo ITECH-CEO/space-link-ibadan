@@ -96,7 +96,7 @@ export function LandlordPaymentsTab() {
       {payments.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <DollarSign className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
+            <Banknote className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
             <p className="text-muted-foreground">No payment records yet.</p>
           </CardContent>
         </Card>
