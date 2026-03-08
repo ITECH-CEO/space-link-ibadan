@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Eye, FileText, User, Phone, Shield, Pencil } from "lucide-react";
+import { Eye, FileText, User, Phone, Shield, Pencil, Search } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 export function ClientsTab() {
@@ -21,6 +21,8 @@ export function ClientsTab() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
@@ -29,6 +31,16 @@ export function ClientsTab() {
   };
 
   useEffect(() => { fetchClients(); }, []);
+
+  const filtered = clients.filter(c => {
+    const matchesSearch = !searchQuery ||
+      c.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.phone || "").includes(searchQuery) ||
+      (c.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.faculty || "").toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || c.verification_status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const updateStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
     const { error } = await supabase.from("clients").update({ verification_status: status }).eq("id", id);
@@ -110,22 +122,49 @@ export function ClientsTab() {
 
   return (
     <>
-      <Card>
+      <Card className="card-elevated">
         <CardHeader>
-          <CardTitle>Client Registrations</CardTitle>
+          <CardTitle className="font-display">Client Registrations ({clients.length})</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Search & Filter */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, phone, email, faculty..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {loading ? (
             <p className="text-muted-foreground">Loading...</p>
-          ) : clients.length === 0 ? (
-            <p className="text-muted-foreground">No clients registered yet.</p>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">{searchQuery || statusFilter !== "all" ? "No clients match your filters." : "No clients registered yet."}</p>
+            </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/30">
                     <TableHead>Name</TableHead>
                     <TableHead>Phone</TableHead>
+                    <TableHead>Faculty</TableHead>
                     <TableHead>Completion</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Details</TableHead>
@@ -133,10 +172,16 @@ export function ClientsTab() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {clients.map((c) => (
-                    <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.full_name}</TableCell>
-                      <TableCell>{c.phone || "—"}</TableCell>
+                  {filtered.map((c) => (
+                    <TableRow key={c.id} className="hover:bg-muted/20">
+                      <TableCell>
+                        <div>
+                          <span className="font-medium">{c.full_name}</span>
+                          {c.email && <p className="text-xs text-muted-foreground">{c.email}</p>}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{c.phone || "—"}</TableCell>
+                      <TableCell className="text-sm">{c.faculty || "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-16 rounded-full bg-muted overflow-hidden">
@@ -260,6 +305,9 @@ export function ClientsTab() {
                 </TableBody>
               </Table>
             </div>
+          )}
+          {filtered.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-3">Showing {filtered.length} of {clients.length} clients</p>
           )}
         </CardContent>
       </Card>

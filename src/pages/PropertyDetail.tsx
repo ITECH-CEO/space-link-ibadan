@@ -299,14 +299,14 @@ export default function PropertyDetail() {
             {(property as any).utility_rating?.water && (
               <Card className="border-primary/20">
                 <CardContent className="pt-5 pb-4 flex items-center gap-3">
-                  <div className="rounded-full bg-blue-500/10 p-2.5">
-                    <Droplets className="h-5 w-5 text-blue-500" />
+                  <div className="rounded-full bg-accent/10 p-2.5">
+                    <Droplets className="h-5 w-5 text-accent" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Water Reliability</p>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((s) => (
-                        <Star key={s} className={cn("h-3.5 w-3.5", s <= (property as any).utility_rating.water ? "fill-blue-500 text-blue-500" : "text-muted-foreground/20")} />
+                        <Star key={s} className={cn("h-3.5 w-3.5", s <= (property as any).utility_rating.water ? "fill-accent text-accent" : "text-muted-foreground/20")} />
                       ))}
                     </div>
                   </div>
