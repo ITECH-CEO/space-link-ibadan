@@ -36,6 +36,7 @@ const navItems = [
   { key: "admins", label: "Admins", icon: ShieldCheck, roles: ["super_admin"] },
   { key: "analytics", label: "Analytics", icon: BarChart3, roles: ["super_admin", "manager"] },
   { key: "fees", label: "Fees", icon: Settings, roles: ["super_admin"] },
+  { key: "settings", label: "Settings", icon: Settings, roles: ["super_admin"] },
 ];
 
 const tabComponents: Record<string, React.ComponentType> = {
