@@ -215,6 +215,11 @@ export default function MyMatches() {
           <p className="text-muted-foreground">Properties and roommates matched to your profile</p>
         </motion.div>
 
+        {/* Tenant Accommodation Section - shows when user has occupied rooms */}
+        <div className="mb-8">
+          <TenantAccommodationCard />
+        </div>
+
         {loading ? (
           <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}</div>
         ) : (
