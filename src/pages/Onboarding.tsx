@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Heart, Search, Check, ArrowRight, ArrowLeft, Loader2, Sparkles,
 } from "lucide-react";
+import { OnboardingTour } from "@/components/tours/OnboardingTour";
 
 const STEPS = [
   { label: "About You", icon: User, description: "Basic info" },
