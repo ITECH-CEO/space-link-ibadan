@@ -114,7 +114,7 @@ export function Navbar() {
                   className="flex items-center gap-2 mb-4 p-2 rounded-lg bg-success/10 text-sm"
                 >
                   <Phone className="h-4 w-4 text-success" />
-                  <span className="font-semibold text-foreground">+234 800 000 0000</span>
+                  <span className="font-semibold text-foreground">+234 913 742 5552</span>
                 </a>
                 <nav className="flex flex-col gap-1">
                   <NavItems />
