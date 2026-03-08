@@ -790,7 +790,9 @@ export type Database = {
         Row: {
           ai_reasoning: string | null
           client_a_id: string
+          client_a_status: string
           client_b_id: string
+          client_b_status: string
           compatibility_score: number | null
           created_at: string
           id: string
@@ -804,7 +806,9 @@ export type Database = {
         Insert: {
           ai_reasoning?: string | null
           client_a_id: string
+          client_a_status?: string
           client_b_id: string
+          client_b_status?: string
           compatibility_score?: number | null
           created_at?: string
           id?: string
@@ -818,7 +822,9 @@ export type Database = {
         Update: {
           ai_reasoning?: string | null
           client_a_id?: string
+          client_a_status?: string
           client_b_id?: string
+          client_b_status?: string
           compatibility_score?: number | null
           created_at?: string
           id?: string
