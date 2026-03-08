@@ -210,7 +210,7 @@ export default function MyMatches() {
           <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}</div>
         ) : (
           <Tabs defaultValue="properties">
-            <TabsList className="mb-4">
+            <TabsList className="mb-4" data-tour="matches-tabs">
               <TabsTrigger value="properties"><Building2 className="mr-2 h-4 w-4" />Properties ({matches.length})</TabsTrigger>
               <TabsTrigger value="roommates"><Users className="mr-2 h-4 w-4" />Roommates ({roommateMatches.length})</TabsTrigger>
             </TabsList>
