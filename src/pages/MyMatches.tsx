@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, Link, useNavigate } from "react-router-dom";
+import { Navigate, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
@@ -28,6 +28,7 @@ interface RoommateMatchDetail {
 export default function MyMatches() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [matches, setMatches] = useState<MatchWithDetails[]>([]);
   const [roommateMatches, setRoommateMatches] = useState<RoommateMatchDetail[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +36,33 @@ export default function MyMatches() {
   const [clientId, setClientId] = useState<string | null>(null);
   const [seekingRoommate, setSeekingRoommate] = useState(false);
   const [payingMatchId, setPayingMatchId] = useState<string | null>(null);
+
+  // Verify Paystack payment on redirect
+  useEffect(() => {
+    const reference = searchParams.get("reference") || searchParams.get("trxref");
+    if (!reference || !user) return;
+    const verifyPayment = async () => {
+      try {
+        const res = await supabase.functions.invoke("paystack-verify", {
+          body: { reference },
+        });
+        if (res.error) {
+          toast.error("Payment verification failed: " + (res.error.message || "Unknown error"));
+        } else if (res.data?.verified) {
+          toast.success(`Payment of ₦${res.data.amount?.toLocaleString()} verified successfully!`);
+        } else {
+          toast.error("Payment could not be verified");
+        }
+      } catch (err: any) {
+        toast.error("Payment verification error");
+      }
+      // Remove reference from URL
+      searchParams.delete("reference");
+      searchParams.delete("trxref");
+      setSearchParams(searchParams, { replace: true });
+    };
+    verifyPayment();
+  }, [user, searchParams]);
 
   useEffect(() => {
     if (!user) return;

@@ -80,7 +80,10 @@ export default function LandlordOnboarding() {
       toast.error(error.message);
     } else {
       toast.success("Property submitted for verification! Our team will review it shortly.");
-      navigate("/landlord");
+      // Refresh the page after a short delay to pick up the new landlord role
+      setTimeout(() => {
+        window.location.href = "/landlord";
+      }, 1000);
     }
     setSubmitting(false);
   };
