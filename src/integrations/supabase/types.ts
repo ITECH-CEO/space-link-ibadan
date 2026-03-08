@@ -531,7 +531,9 @@ export type Database = {
           landlord_email: string | null
           landlord_name: string
           landlord_phone: string | null
+          latitude: number | null
           location: string | null
+          longitude: number | null
           owner_user_id: string | null
           photo_check: boolean | null
           photos: string[] | null
@@ -556,7 +558,9 @@ export type Database = {
           landlord_email?: string | null
           landlord_name: string
           landlord_phone?: string | null
+          latitude?: number | null
           location?: string | null
+          longitude?: number | null
           owner_user_id?: string | null
           photo_check?: boolean | null
           photos?: string[] | null
@@ -581,7 +585,9 @@ export type Database = {
           landlord_email?: string | null
           landlord_name?: string
           landlord_phone?: string | null
+          latitude?: number | null
           location?: string | null
+          longitude?: number | null
           owner_user_id?: string | null
           photo_check?: boolean | null
           photos?: string[] | null
@@ -596,6 +602,59 @@ export type Database = {
           videos?: string[] | null
         }
         Relationships: []
+      }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          user_id: string
+          uses: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          user_id: string
+          uses?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          uses?: number
+        }
+        Relationships: []
+      }
+      referral_uses: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code_id: string
+          referred_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code_id: string
+          referred_user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code_id?: string
+          referred_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_uses_referral_code_id_fkey"
+            columns: ["referral_code_id"]
+            isOneToOne: false
+            referencedRelation: "referral_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       room_types: {
         Row: {
@@ -702,6 +761,35 @@ export type Database = {
             columns: ["room_type_id"]
             isOneToOne: false
             referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_properties: {
+        Row: {
+          created_at: string
+          id: string
+          property_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          property_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          property_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
