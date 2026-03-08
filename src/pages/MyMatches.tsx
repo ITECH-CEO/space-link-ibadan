@@ -14,6 +14,7 @@ import { Handshake, Building2, MapPin, Banknote, Users, Sparkles, Loader2, Messa
 import { RoommateSwipeCard } from "@/components/RoommateSwipeCard";
 import { motion } from "framer-motion";
 import { MatchesTour } from "@/components/tours/MatchesTour";
+import { ClientRentPayments } from "@/components/ClientRentPayments";
 
 interface MatchWithDetails {
   id: string; status: string; compatibility_score: number | null; created_at: string;
