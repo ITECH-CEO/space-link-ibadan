@@ -129,8 +129,26 @@ export default function MyMatches() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { toast.error("Not authenticated"); return; }
 
+      // Get commission details for this match
+      const match = matches.find(m => m.id === matchId);
+      const { data: commission } = await supabase
+        .from("commissions")
+        .select("id, amount")
+        .eq("match_id", matchId)
+        .maybeSingle();
+
+      if (!commission) {
+        toast.error("No commission found for this match");
+        return;
+      }
+
       const res = await supabase.functions.invoke("paystack-initialize", {
-        body: { match_id: matchId, callback_url: window.location.href },
+        body: {
+          email: session.user.email,
+          amount: commission.amount,
+          callback_url: window.location.href,
+          metadata: { commission_id: commission.id, match_id: matchId },
+        },
       });
 
       if (res.error) {
