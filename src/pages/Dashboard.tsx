@@ -72,6 +72,7 @@ export default function Dashboard() {
           {(isSuperAdmin || isManager) && <TabsContent value="matches"><MatchesTab /></TabsContent>}
           {(isSuperAdmin || isManager) && <TabsContent value="roommates"><RoommateMatchesTab /></TabsContent>}
           {(isSuperAdmin || isManager) && <TabsContent value="commissions"><CommissionsTab /></TabsContent>}
+          {(isSuperAdmin || isManager) && <TabsContent value="inspections"><InspectionsTab /></TabsContent>}
           {isSuperAdmin && <TabsContent value="admins"><AdminsTab /></TabsContent>}
           {(isSuperAdmin || isManager) && <TabsContent value="analytics"><AnalyticsTab /></TabsContent>}
         </Tabs>
