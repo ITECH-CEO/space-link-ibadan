@@ -352,6 +352,7 @@ export default function Properties() {
         )}
       </main>
       <Footer />
+      <PropertiesTour />
     </div>
   );
 }
