@@ -135,7 +135,7 @@ export function InspectionBookingWizard({
       {/* Step 1: Pick a Slot */}
       {step === 0 && (
         <div className="space-y-4">
-          <Calendar
+          <Calendar data-tour="inspection-calendar"
             mode="single"
             selected={selectedDate}
             onSelect={(d) => { setSelectedDate(d); setSelectedSlot(null); }}
