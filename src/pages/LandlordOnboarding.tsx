@@ -90,7 +90,7 @@ export default function LandlordOnboarding() {
       <Navbar />
       <main className="container max-w-2xl py-8">
         <h1 className="font-display text-3xl font-bold mb-2">Register Your Property</h1>
-        <p className="text-muted-foreground mb-8">List your property on UNISPACE.NG and reach thousands of verified students.</p>
+        <p className="text-muted-foreground mb-8">List your property on MyCrib.ng and reach thousands of verified students.</p>
 
         {/* Step Indicator */}
         <div className="flex items-center justify-between mb-8">

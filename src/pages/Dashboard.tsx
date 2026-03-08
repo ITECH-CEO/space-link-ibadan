@@ -37,7 +37,7 @@ export default function Dashboard() {
         <div className="mb-6 flex items-center gap-3">
           <div>
             <h1 className="font-display text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">Manage UNISPACE.NG operations</p>
+            <p className="text-muted-foreground">Manage MyCrib.ng operations</p>
           </div>
           <Badge variant="outline" className={`capitalize ml-auto ${roleColors[userRole] || ""}`}>
             {roleLabel}

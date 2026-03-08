@@ -97,7 +97,7 @@ export function RoommateMatchesTab() {
     if (!phone) { toast.error("No phone number"); return; }
     const clean = phone.replace(/\D/g, "");
     const msg = encodeURIComponent(
-      `Hello! You've been matched with a potential roommate "${partnerName || 'someone'}" on SpaceLink. Contact us for more details! 🏠👫`
+      `Hello! You've been matched with a potential roommate "${partnerName || 'someone'}" on MyCrib.ng. Contact us for more details! 🏠👫`
     );
     window.open(`https://wa.me/${clean}?text=${msg}`, "_blank");
   };
