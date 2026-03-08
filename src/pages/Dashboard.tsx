@@ -21,6 +21,7 @@ import { FeesTab } from "@/components/dashboard/FeesTab";
 import { SettingsTab } from "@/components/dashboard/SettingsTab";
 import { RentTrackingTab } from "@/components/dashboard/RentTrackingTab";
 import { ComplaintsTab } from "@/components/dashboard/ComplaintsTab";
+import { OccupancyTab } from "@/components/dashboard/OccupancyTab";
 import {
   LayoutDashboard, Users, Building2, Handshake, Banknote, Wrench,
   ShieldCheck, UserPlus, BarChart3, CalendarDays, Settings,
