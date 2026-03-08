@@ -13,6 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, MapPin, Users, Search, DollarSign, SlidersHorizontal, X, Heart, Map, List, Footprints, Navigation, Star } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 import type { Tables } from "@/integrations/supabase/types";
 import { PropertyMap } from "@/components/PropertyMap";
 import { PropertyCarousel } from "@/components/PropertyCarousel";
