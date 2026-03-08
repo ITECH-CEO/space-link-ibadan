@@ -1,50 +1,51 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { MessageCircle, Send, ArrowLeft, User } from "lucide-react";
+import { MessageCircle, Send, Smile } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface Conversation {
-  id: string;
-  participant_a: string;
-  participant_b: string;
-  last_message_at: string;
-  partner_name: string;
-  partner_id: string;
-  unread_count: number;
-}
-
-interface Message {
-  id: string;
-  conversation_id: string;
-  sender_id: string;
-  content: string;
-  read: boolean;
-  created_at: string;
-}
+import { ConversationList, type Conversation } from "@/components/messaging/ConversationList";
+import { MessageBubble, type Message } from "@/components/messaging/MessageBubble";
+import { ChatHeader } from "@/components/messaging/ChatHeader";
+import { TypingIndicator } from "@/components/messaging/TypingIndicator";
+import { DateSeparator } from "@/components/messaging/DateSeparator";
+import { format } from "date-fns";
 
 export default function Messages() {
   const { user, loading: authLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const targetUserId = searchParams.get("to");
+  const contextType = searchParams.get("context_type");
+  const contextId = searchParams.get("context_id");
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvo, setActiveConvo] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [partnerTyping, setPartnerTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Update last_seen_at periodically
+  useEffect(() => {
+    if (!user) return;
+    const update = () => {
+      supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("user_id", user.id).then(() => {});
+    };
+    update();
+    const interval = setInterval(update, 60000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   // Fetch conversations
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     if (!user) return;
     const { data: convos } = await (supabase as any)
       .from("conversations")
@@ -58,49 +59,56 @@ export default function Messages() {
       return;
     }
 
-    // Get partner profiles
     const partnerIds = convos.map((c: any) =>
       c.participant_a === user.id ? c.participant_b : c.participant_a
     );
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, full_name")
-      .in("user_id", partnerIds);
 
-    const profileMap = new Map((profiles || []).map((p) => [p.user_id, p.full_name]));
+    // Fetch profiles, unread counts, and last messages in parallel
+    const [profilesRes, unreadRes, lastMsgRes, contextRes] = await Promise.all([
+      supabase.from("profiles").select("user_id, full_name, avatar_url, last_seen_at").in("user_id", partnerIds),
+      (supabase as any).from("messages").select("conversation_id").eq("read", false).neq("sender_id", user.id).in("conversation_id", convos.map((c: any) => c.id)),
+      Promise.all(convos.map((c: any) =>
+        (supabase as any).from("messages").select("content").eq("conversation_id", c.id).order("created_at", { ascending: false }).limit(1).then((r: any) => ({ id: c.id, content: r.data?.[0]?.content }))
+      )),
+      // Fetch context labels for property-linked convos
+      Promise.all(convos.filter((c: any) => c.context_type === "property" && c.context_id).map((c: any) =>
+        supabase.from("properties").select("property_name").eq("id", c.context_id).single().then((r) => ({ id: c.id, label: r.data?.property_name }))
+      )),
+    ]);
 
-    // Get unread counts
-    const { data: unreadData } = await (supabase as any)
-      .from("messages")
-      .select("conversation_id")
-      .eq("read", false)
-      .neq("sender_id", user.id)
-      .in("conversation_id", convos.map((c: any) => c.id));
-
+    const profileMap = new Map((profilesRes.data || []).map((p) => [p.user_id, p]));
     const unreadMap = new Map<string, number>();
-    (unreadData || []).forEach((m: any) => {
+    (unreadRes.data || []).forEach((m: any) => {
       unreadMap.set(m.conversation_id, (unreadMap.get(m.conversation_id) || 0) + 1);
     });
+    const lastMsgMap = new Map(lastMsgRes.map((m: any) => [m.id, m.content]));
+    const contextMap = new Map(contextRes.map((c: any) => [c.id, c.label]));
+
+    const fiveMinAgo = Date.now() - 5 * 60 * 1000;
 
     setConversations(
       convos.map((c: any) => {
         const partnerId = c.participant_a === user.id ? c.participant_b : c.participant_a;
+        const profile = profileMap.get(partnerId);
         return {
           ...c,
           partner_id: partnerId,
-          partner_name: profileMap.get(partnerId) || "User",
+          partner_name: profile?.full_name || "User",
+          partner_avatar: profile?.avatar_url || null,
+          is_online: profile?.last_seen_at ? new Date(profile.last_seen_at).getTime() > fiveMinAgo : false,
           unread_count: unreadMap.get(c.id) || 0,
+          last_message: lastMsgMap.get(c.id) || "",
+          context_label: contextMap.get(c.id) || (c.context_type === "roommate" ? "Roommate Match" : undefined),
         };
       })
     );
     setLoading(false);
-  };
+  }, [user]);
 
   // Auto-create conversation if ?to= param
   useEffect(() => {
     if (!user || !targetUserId || targetUserId === user.id) return;
     const initConvo = async () => {
-      // Check existing
       const { data: existing } = await (supabase as any)
         .from("conversations")
         .select("id")
@@ -112,9 +120,12 @@ export default function Messages() {
       if (existing) {
         setActiveConvo(existing.id);
       } else {
+        const insertData: any = { participant_a: user.id, participant_b: targetUserId };
+        if (contextType) insertData.context_type = contextType;
+        if (contextId) insertData.context_id = contextId;
         const { data: newConvo, error } = await (supabase as any)
           .from("conversations")
-          .insert({ participant_a: user.id, participant_b: targetUserId })
+          .insert(insertData)
           .select()
           .single();
         if (!error && newConvo) setActiveConvo(newConvo.id);
@@ -122,11 +133,11 @@ export default function Messages() {
       fetchConversations();
     };
     initConvo();
-  }, [user, targetUserId]);
+  }, [user, targetUserId, contextType, contextId, fetchConversations]);
 
   useEffect(() => {
     fetchConversations();
-  }, [user]);
+  }, [fetchConversations]);
 
   // Fetch messages for active conversation
   useEffect(() => {
@@ -139,7 +150,6 @@ export default function Messages() {
         .order("created_at", { ascending: true });
       setMessages(data || []);
 
-      // Mark unread as read
       if (user) {
         await (supabase as any)
           .from("messages")
@@ -151,7 +161,7 @@ export default function Messages() {
     };
     fetchMessages();
 
-    // Realtime subscription
+    // Realtime messages
     const channel = supabase
       .channel(`messages-${activeConvo}`)
       .on(
@@ -159,24 +169,52 @@ export default function Messages() {
         { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${activeConvo}` },
         (payload) => {
           setMessages((prev) => [...prev, payload.new as Message]);
-          // Mark as read if not sender
           if (user && (payload.new as Message).sender_id !== user.id) {
-            (supabase as any)
-              .from("messages")
-              .update({ read: true })
-              .eq("id", (payload.new as Message).id);
+            (supabase as any).from("messages").update({ read: true }).eq("id", (payload.new as Message).id);
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${activeConvo}` },
+        (payload) => {
+          setMessages((prev) => prev.map((m) => m.id === (payload.new as Message).id ? payload.new as Message : m));
         }
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // Typing presence channel
+    const presenceChannel = supabase.channel(`typing-${activeConvo}`);
+    presenceChannel
+      .on("broadcast", { event: "typing" }, (payload) => {
+        if (payload.payload?.user_id !== user?.id) {
+          setPartnerTyping(true);
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => setPartnerTyping(false), 3000);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      supabase.removeChannel(presenceChannel);
+    };
   }, [activeConvo, user]);
 
   // Auto-scroll
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, partnerTyping]);
+
+  // Broadcast typing
+  const broadcastTyping = useCallback(() => {
+    if (!activeConvo || !user) return;
+    supabase.channel(`typing-${activeConvo}`).send({
+      type: "broadcast",
+      event: "typing",
+      payload: { user_id: user.id },
+    });
+  }, [activeConvo, user]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !activeConvo || !user) return;
@@ -189,11 +227,11 @@ export default function Messages() {
     if (error) toast.error("Failed to send");
     else {
       setNewMessage("");
-      // Update last_message_at
       await (supabase as any)
         .from("conversations")
         .update({ last_message_at: new Date().toISOString() })
         .eq("id", activeConvo);
+      fetchConversations();
     }
     setSending(false);
   };
@@ -203,14 +241,23 @@ export default function Messages() {
 
   const activeConversation = conversations.find((c) => c.id === activeConvo);
 
+  // Group messages by date
+  const groupedMessages: { date: string; messages: Message[] }[] = [];
+  messages.forEach((m) => {
+    const day = format(new Date(m.created_at), "yyyy-MM-dd");
+    const last = groupedMessages[groupedMessages.length - 1];
+    if (last && last.date === day) last.messages.push(m);
+    else groupedMessages.push({ date: day, messages: [m] });
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container py-8">
+      <main className="container py-6">
         <motion.h1
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="font-display text-3xl font-bold mb-6"
+          className="font-display text-3xl font-bold mb-5"
         >
           Messages
         </motion.h1>
@@ -218,111 +265,78 @@ export default function Messages() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid gap-6 md:grid-cols-[300px_1fr] h-[calc(100vh-220px)]"
+          className="grid gap-0 md:grid-cols-[320px_1fr] h-[calc(100vh-200px)] rounded-xl overflow-hidden border border-border/50 shadow-sm"
         >
           {/* Conversation list */}
-          <Card className={`overflow-hidden card-elevated border-border/50 ${activeConvo ? "hidden md:block" : ""}`}>
-            <CardHeader className="py-3 px-4 border-b border-border/50">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-primary" /> Conversations
-              </CardTitle>
-            </CardHeader>
-            <ScrollArea className="h-[calc(100%-60px)]">
-              {loading ? (
-                <p className="p-4 text-sm text-muted-foreground">Loading...</p>
-              ) : conversations.length === 0 ? (
-                <div className="p-8 text-center">
-                  <MessageCircle className="mx-auto h-10 w-10 text-muted-foreground/20 mb-2" />
-                  <p className="text-sm text-muted-foreground">No conversations yet.</p>
-                </div>
-              ) : (
-                conversations.map((c, i) => (
-                  <motion.button
-                    key={c.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() => setActiveConvo(c.id)}
-                    className={`w-full text-left px-4 py-3 border-b border-border/30 transition-colors hover:bg-muted/50 ${
-                      activeConvo === c.id ? "bg-primary/5 border-l-2 border-l-primary" : ""
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <User className="h-4 w-4 text-primary" />
-                        </div>
-                        <span className="font-medium text-sm truncate">{c.partner_name}</span>
-                      </div>
-                      {c.unread_count > 0 && (
-                        <Badge className="gradient-accent text-accent-foreground text-xs h-5 min-w-5 flex items-center justify-center">
-                          {c.unread_count}
-                        </Badge>
-                      )}
-                    </div>
-                  </motion.button>
-                ))
-              )}
-            </ScrollArea>
-          </Card>
+          <div className={`bg-card border-r border-border/50 ${activeConvo ? "hidden md:block" : ""}`}>
+            <ConversationList
+              conversations={conversations}
+              activeConvo={activeConvo}
+              onSelect={setActiveConvo}
+              loading={loading}
+            />
+          </div>
 
           {/* Chat area */}
-          <Card className={`flex flex-col overflow-hidden card-elevated border-border/50 ${!activeConvo ? "hidden md:flex" : ""}`}>
-            {activeConvo ? (
+          <div className={`bg-card flex flex-col ${!activeConvo ? "hidden md:flex" : "flex"}`}>
+            {activeConvo && activeConversation ? (
               <>
-                <CardHeader className="py-3 px-4 border-b border-border/50 flex-row items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="md:hidden h-8 w-8"
-                    onClick={() => setActiveConvo(null)}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary" />
-                  </div>
-                  <CardTitle className="text-sm">{activeConversation?.partner_name || "Chat"}</CardTitle>
-                </CardHeader>
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-3">
+                <ChatHeader
+                  partnerName={activeConversation.partner_name}
+                  partnerAvatar={activeConversation.partner_avatar}
+                  isOnline={activeConversation.is_online}
+                  contextType={activeConversation.context_type}
+                  contextId={activeConversation.context_id}
+                  contextLabel={activeConversation.context_label}
+                  onBack={() => setActiveConvo(null)}
+                />
+                <ScrollArea className="flex-1 px-4 py-2">
+                  <div className="space-y-1">
+                    {groupedMessages.map((group) => (
+                      <div key={group.date}>
+                        <DateSeparator date={group.messages[0].created_at} />
+                        <div className="space-y-1">
+                          {group.messages.map((m, i) => {
+                            const prevMsg = group.messages[i - 1];
+                            const showAvatar = !prevMsg || prevMsg.sender_id !== m.sender_id;
+                            return (
+                              <MessageBubble
+                                key={m.id}
+                                message={m}
+                                isOwn={m.sender_id === user.id}
+                                showAvatar={showAvatar}
+                                partnerName={activeConversation.partner_name}
+                                partnerAvatar={activeConversation.partner_avatar}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
                     <AnimatePresence>
-                      {messages.map((m) => (
-                        <motion.div
-                          key={m.id}
-                          initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{ duration: 0.2 }}
-                          className={`flex ${m.sender_id === user.id ? "justify-end" : "justify-start"}`}
-                        >
-                          <div
-                            className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${
-                              m.sender_id === user.id
-                                ? "gradient-primary text-primary-foreground rounded-br-md"
-                                : "bg-muted text-foreground rounded-bl-md"
-                            }`}
-                          >
-                            <p>{m.content}</p>
-                            <p className={`text-[10px] mt-1 ${m.sender_id === user.id ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                              {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                            </p>
-                          </div>
-                        </motion.div>
-                      ))}
+                      {partnerTyping && <TypingIndicator name={activeConversation.partner_name} />}
                     </AnimatePresence>
                     <div ref={scrollRef} />
                   </div>
                 </ScrollArea>
-                <div className="border-t border-border/50 p-3 flex gap-2">
+                <div className="border-t border-border/50 p-3 flex gap-2 bg-card">
                   <Input
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      broadcastTyping();
+                    }}
                     placeholder="Type a message..."
                     maxLength={1000}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                    className="bg-muted/50"
+                    className="bg-muted/50 border-0"
                   />
-                  <Button onClick={sendMessage} disabled={sending || !newMessage.trim()} size="icon" className="gradient-primary text-primary-foreground">
+                  <Button
+                    onClick={sendMessage}
+                    disabled={sending || !newMessage.trim()}
+                    size="icon"
+                    className="gradient-primary text-primary-foreground flex-shrink-0"
+                  >
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
@@ -336,7 +350,7 @@ export default function Messages() {
                 </div>
               </div>
             )}
-          </Card>
+          </div>
         </motion.div>
       </main>
     </div>
