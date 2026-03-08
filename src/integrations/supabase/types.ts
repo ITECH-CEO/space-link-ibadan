@@ -329,6 +329,84 @@ export type Database = {
           },
         ]
       }
+      lease_agreements: {
+        Row: {
+          acknowledged_at: string | null
+          additional_notes: string | null
+          created_at: string
+          custom_terms: string[] | null
+          end_date: string
+          id: string
+          landlord_user_id: string
+          payment_frequency: string
+          property_id: string
+          rent_amount: number
+          room_type_id: string | null
+          security_deposit: number | null
+          start_date: string
+          status: string
+          tenant_email: string | null
+          tenant_name: string
+          tenant_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          additional_notes?: string | null
+          created_at?: string
+          custom_terms?: string[] | null
+          end_date: string
+          id?: string
+          landlord_user_id: string
+          payment_frequency?: string
+          property_id: string
+          rent_amount?: number
+          room_type_id?: string | null
+          security_deposit?: number | null
+          start_date: string
+          status?: string
+          tenant_email?: string | null
+          tenant_name: string
+          tenant_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          additional_notes?: string | null
+          created_at?: string
+          custom_terms?: string[] | null
+          end_date?: string
+          id?: string
+          landlord_user_id?: string
+          payment_frequency?: string
+          property_id?: string
+          rent_amount?: number
+          room_type_id?: string | null
+          security_deposit?: number | null
+          start_date?: string
+          status?: string
+          tenant_email?: string | null
+          tenant_name?: string
+          tenant_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_agreements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_agreements_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_requests: {
         Row: {
           created_at: string
