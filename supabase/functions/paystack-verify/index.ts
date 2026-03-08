@@ -18,6 +18,7 @@ function getCorsHeaders(req: Request) {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -39,7 +40,6 @@ serve(async (req) => {
       });
     }
 
-    // Verify transaction with Paystack
     const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
       headers: {
         Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
@@ -61,26 +61,21 @@ serve(async (req) => {
 
     const metadata = data.data.metadata || {};
     
-    // Handle different payment types
     if (metadata.payment_type === "inspection" && metadata.booking_id) {
       await supabase
         .from("inspection_bookings")
         .update({ payment_status: "paid", payment_reference: reference })
         .eq("id", metadata.booking_id);
-      console.log("Inspection payment verified for booking:", metadata.booking_id);
     } else if (metadata.payment_type === "roommate_matching" && metadata.roommate_match_id) {
       await supabase
         .from("roommate_matches")
         .update({ payment_status: "paid", payment_reference: reference })
         .eq("id", metadata.roommate_match_id);
-      console.log("Roommate matching payment verified for match:", metadata.roommate_match_id);
     } else if (metadata.commission_id) {
-      // Legacy: commission-based payments
       await supabase
         .from("commissions")
         .update({ status: "paid", notes: `Paystack ref: ${reference}` })
         .eq("id", metadata.commission_id);
-      console.log("Commission payment verified:", metadata.commission_id);
     }
 
     return new Response(JSON.stringify({
@@ -95,7 +90,7 @@ serve(async (req) => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

@@ -17,6 +17,7 @@ function getCorsHeaders(req: Request) {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -27,12 +28,10 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find bookings for tomorrow that are still confirmed
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = tomorrow.toISOString().split("T")[0];
 
-    // Get slots for tomorrow
     const { data: slots } = await supabase
       .from("inspection_slots")
       .select("id, slot_date, slot_time, property_id, properties(property_name, address)")
@@ -46,7 +45,6 @@ Deno.serve(async (req) => {
 
     const slotIds = slots.map((s: any) => s.id);
 
-    // Get confirmed bookings for these slots
     const { data: bookings } = await supabase
       .from("inspection_bookings")
       .select("id, user_id, slot_id")
@@ -85,7 +83,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

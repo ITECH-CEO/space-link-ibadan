@@ -18,6 +18,7 @@ function getCorsHeaders(req: Request) {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -30,14 +31,12 @@ serve(async (req) => {
     const today = new Date().toISOString().split("T")[0];
     const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-    // Find overdue payments
     const { data: overdue } = await supabase
       .from("rent_payments")
       .select("*, properties(property_name, owner_user_id)")
       .eq("status", "pending")
       .lt("due_date", today);
 
-    // Mark overdue
     if (overdue && overdue.length > 0) {
       const overdueIds = overdue.map((p: any) => p.id);
       await supabase
@@ -45,7 +44,6 @@ serve(async (req) => {
         .update({ status: "overdue" })
         .in("id", overdueIds);
 
-      // Notify landlords about overdue payments
       const notifications: any[] = [];
       const notifiedLandlords = new Set<string>();
 
@@ -69,7 +67,6 @@ serve(async (req) => {
       }
     }
 
-    // Find upcoming payments (due in 3 days)
     const { data: upcoming } = await supabase
       .from("rent_payments")
       .select("*, properties(property_name, owner_user_id)")
@@ -108,7 +105,7 @@ serve(async (req) => {
   } catch (error) {
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
 });

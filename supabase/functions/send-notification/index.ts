@@ -18,6 +18,7 @@ function getCorsHeaders(req: Request) {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -30,7 +31,6 @@ serve(async (req) => {
 
     const { type, user_id, data } = await req.json();
 
-    // Get user's profile for their name
     const { data: profile } = await supabaseClient
       .from("profiles")
       .select("full_name")
@@ -39,7 +39,6 @@ serve(async (req) => {
 
     const userName = profile?.full_name || "User";
 
-    // Create in-app notification based on type
     let notification = { title: "", message: "", notifType: "info", link: "" };
 
     switch (type) {
@@ -84,7 +83,6 @@ serve(async (req) => {
         };
     }
 
-    // Insert notification
     const { error } = await supabaseClient.from("notifications").insert({
       user_id,
       title: notification.title,
@@ -101,7 +99,7 @@ serve(async (req) => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

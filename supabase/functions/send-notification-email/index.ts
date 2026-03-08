@@ -17,6 +17,7 @@ function getCorsHeaders(req: Request) {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -29,7 +30,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get user email from profile/client
     const { data: client } = await supabase
       .from("clients")
       .select("email, full_name")
@@ -65,7 +65,6 @@ Deno.serve(async (req) => {
         });
     }
 
-    // Store as a notification (email sending requires domain setup)
     await supabase.from("notifications").insert({
       user_id,
       title: subject,
@@ -79,7 +78,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

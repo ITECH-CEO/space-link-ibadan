@@ -52,7 +52,6 @@ function computeScore(client: Client, property: Property, roomType?: RoomType): 
   const budgetMin = client.budget_min ?? 0;
   const budgetMax = client.budget_max ?? Infinity;
 
-  // Budget fit (0-40 points)
   if (price > 0 && budgetMax < Infinity) {
     if (price >= budgetMin && price <= budgetMax) {
       const mid = (budgetMin + budgetMax) / 2;
@@ -65,7 +64,6 @@ function computeScore(client: Client, property: Property, roomType?: RoomType): 
     score += 20;
   }
 
-  // Preference/tag overlap (0-40 points)
   const clientTags = client.preferences ?? [];
   const propertyTags = [
     ...(property.facilities ?? []),
@@ -79,7 +77,6 @@ function computeScore(client: Client, property: Property, roomType?: RoomType): 
     score += 15;
   }
 
-  // Verification bonus (0-20 points)
   if (client.verification_status === "approved") score += 10;
   if (property.verification_status === "approved") score += 10;
 
@@ -87,6 +84,7 @@ function computeScore(client: Client, property: Property, roomType?: RoomType): 
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -241,7 +239,7 @@ serve(async (req) => {
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });
